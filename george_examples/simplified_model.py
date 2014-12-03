@@ -11,6 +11,8 @@ import triangle
 import numpy as np
 import matplotlib.pyplot as pl
 import subprocess
+import sys
+import cPickle
 
 import george
 from george import kernels
@@ -114,33 +116,35 @@ if __name__ == "__main__":
         m = gp.sample_conditional(y, x)
         pl.plot(x, m, color="#4682b4", alpha=0.3)
         #print(np.exp(s))
+
     pl.ylabel(r"$y$")
     pl.xlabel(r"$t$")
     pl.xlim(rng[0], rng[1])
     pl.title("results with {0}".format("ExpSquaredKernel"))
     pl.savefig("simplified_data.png")
 
-
     # Make the corner plot.
     log_labels = [r"$\ln$ $a^2$", r"$\ln$ $\tau$"]
     labels = [r"$a^2$", r"$\tau$"]
+
+    #cPickle.dump(samples, open("simple1D_samples.pkl", "w"))
+    #cPickle.dump(truth, open("simple1D_truth.pkl", "w"))
+
     #fig = triangle.corner(samples[:, 2:], truths=truth, labels=labels)
 
     # MCMC infers the hyperparameters in the natural log space
     # either exponentiate the chain values / take log of the true value
-    #truth[0] = np.log(truth[0])
-    #truth[1] = np.log(truth[1])
 
     # only plot the hyperparameters
-    fig = triangle.corner(samples, truths=np.log(truth), labels=log_labels)
-    fig.savefig("simplified_log_gp-corner.png", dpi=150)
+    #fig = triangle.corner(samples, truths=np.log(truth), labels=log_labels)
+    #fig.savefig("simplified_log_gp-corner.png", dpi=150)
 
-    # in the original scale
-    fig = triangle.corner(np.exp(samples), truths=truth, labels=labels)
-    fig.savefig("simplified_gp-corner.png", dpi=150)
+    ## in the original scale
+    #fig = triangle.corner(np.exp(samples), truths=truth, labels=labels)
+    #fig.savefig("simplified_gp-corner.png", dpi=150)
 
-    subprocess.call(["open", "simplified_log_gp-corner.png"])
-    subprocess.call(["open", "simplified_gp-corner.png"])
-    subprocess.call(["open", "simplified_data.png"])
+    #subprocess.call(["open", "simplified_log_gp-corner.png"])
+    #subprocess.call(["open", "simplified_gp-corner.png"])
+    #subprocess.call(["open", "simplified_data.png"])
 
 

@@ -35,7 +35,7 @@ later on.
 \psi_s \sim GP(0, \Sigma), \\
 \end{equation}
 
-where, 
+where $\lambda$ is called precision and $\rho$ the correlation, 
 \begin{align}
 \Sigma &= \Sigma(\lambda, \rho) \\  
 &= \lambda^{-1}K(\rho),
