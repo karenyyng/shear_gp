@@ -1,132 +1,11 @@
-""" helper functions for sampling and fitting data from 2D Gaussian process
-Author : Karen Ng  <karenyng@ucdavis.edu>
+"""contains code for all the diagnostic plots for shear_gp project
 """
-from __future__ import division
-
-
-import emcee
 import numpy as np
-import george
-from george import kernels
 import matplotlib.pyplot as plt
 from astrostats import biweightLoc, bcpcl
 from astroML import density_estimation as de
-
-# ------- helper functions for generating functions -------------
-
-def to_george_param(p):
-    lambDa = p[0]
-    rho = p[1]
-    assert rho >= 0. and rho <= 1., \
-        "input value for rho is {0},".format(rho) + \
-        "needed rho has to be 0 <= rho <= 1"
-
-    return [1. / lambDa, -4. * np.log(rho)]
-
-
-def from_george_param(p_ge):
-    """ gives lambDa and rho from the parameters of George """
-    return [1. / p_ge[0], np.exp(-p_ge[1]/ 4.)]
-
-
-def char_dim(rho):
-    """convert number from the george parametrization to our parametrization"""
-    return np.sqrt(-2. / np.log(rho))
-
-
-def generate_2D_data(truth, spacing, rng=(0., 60.), noise_amp=1e-4):
-    """
-    :param:
-    truth = list of floats, first two the hyperparameters for the GP
-        the rest of the floats are for the model
-    spacing = float, spacing between grid points
-    rng = tuple of two floats, end points of the grid
-
-    :return:
-    coords = grid points
-    psi = GP sample values in 1D
-    psi_err = gaussian noise
-    """
-    # by default the mean vector from which the Gaussian data
-    # is drawn is zero
-    gp = george.GP(truth[0] * kernels.ExpSquaredKernel(truth[1], ndim=2))
-
-    # use regular grid
-    xg = np.arange(rng[0], rng[1], spacing)
-    yg = np.arange(rng[0], rng[1], spacing)
-    coords = np.array([[x, y] for x in xg for y in yg])
-
-    psi = gp.sample(coords)
-
-    #psi += model(truth[2:], coords)
-
-    # not sure if I am generating psi_err correctly
-    # this is the independent Gaussian noise that I add
-    psi_err = noise_amp + noise_amp * np.random.rand(len(psi))
-    psi += psi_err #* np.random.randn(len(psi))
-
-    return coords, psi, psi_err
-
-
-def model(p, coords):
-    """trivial (const) one for testing purpose"""
-    return 0  #p[0] * np.ones(coords.shape[0])
-
-
-# -------- helper functions for calling emcee ---------------
-
-def lnlike_gp(hp, p, coord, psi, psi_err):
-    gp = george.GP(hp[0] * kernels.ExpSquaredKernel(hp[1], ndim=2.))
-    # this step is very revealing that we are fitting the psi_err
-    # when we try to find the hyperparameters
-    gp.compute(coord, psi_err)
-    return gp.lnlikelihood(psi - model(p, coord))
-
-
-def lnprior_gp(hp):
-    # uniform in the log spacing - i didn't initialize this correctly before
-    lna, lntau = hp[:2]
-    if not -5 < lna < 5:
-        return -np.inf
-    if not -5 < lntau < 5:
-        return -np.inf
-
-    # not exactly right, should also add the lnprior_base terms
-    return 0.0
-
-
-def lnprob_gp(hp, p, coords, psi, psi_err):
-    lp = lnprior_gp(hp)
-    # might also needed these
-    if not np.isfinite(lp):
-        return -np.inf
-    return lp + lnlike_gp(hp, p, coords, psi, psi_err)
-
-
-def fit_gp(initial, data, nwalkers=8):
-    ndim = len(initial)
-    p0 = [np.array(initial) + .5 * np.random.randn(ndim)
-          for i in xrange(nwalkers)]
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, args=data)
-
-    print("Running burn-in")
-    p0, lnp, _ = sampler.run_mcmc(p0, 500)
-    sampler.reset()
-
-    print("Running second burn-in")
-    p = p0[np.argmax(lnp)]
-    p0 = [p + 1e-8 * np.random.randn(ndim) for i in xrange(nwalkers)]
-    p0, _, _ = sampler.run_mcmc(p0, 500)
-    sampler.reset()
-
-    print("Running production")
-    p0, _, _ = sampler.run_mcmc(p0, 1000)
-    print "the optimized p0 is {0}".format(p0)
-
-    return sampler, p0
-
-
-# --------- plotting functions ----------------------------------
+from sample_and_fit_gp import char_dim
+import pandas as pd
 
 def find_bin_ix(binedges, loc):
     """find the index in the np array binedges that corresponds to loc"""
@@ -138,13 +17,23 @@ def comb_zip(ls1, ls2):
     return [(lb1, lb2) for lb1 in ls1 for lb2 in ls2]
 
 
-def plot_2D_gp_samples(psi_s, coord_grid, figside, lambDa, rho, range_No):
+def plot_2D_gp_samples(psi_s, coord_grid, figside, truth, range_No,
+                       fontsize=15, unit="arbitrary unit"):
+    """
+    :params
+    psi_s = flattened (1D) version of the psi_s data
+    coord_grid = 2D np array of floats
+    figside = float, in inches how big the figure should be
+    truth = tuple of floats that denotes lambDa and rho
+    """
+    lambDa, rho = truth
+    range_No = coord_grid[-1, -1]
     char_length = char_dim(rho)
     color = psi_s
     fig, ax = plt.subplots()
     im = plt.scatter(coord_grid.transpose()[1], coord_grid.transpose()[0],
                      s=35, cmap=plt.cm.jet, c=color)
-    fig.set_figwidth(figside * 1.04)
+    #fig.set_figwidth(figside * 1.04)
 
     fig.set_figheight(figside)
     fig.colorbar(im, ax=ax, fraction=0.04)
@@ -152,11 +41,14 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, lambDa, rho, range_No):
                  "{0:.2f}, ".format(lambDa) + r"$\rho=$" +
                  "{0:.2f},".format(rho) +
                  r" $ l=$" + "{0:.2f}".format(char_length),
-                 fontsize=20)
-    ax.set_xlabel("arcsec ({0} arcsec per side)".format(range_No),
-                  fontsize=20)
-    ax.set_ylabel("arcsec ({0} arcsec per side)".format(range_No),
-                  fontsize=20)
+                 fontsize=fontsize)
+    ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
+                  fontsize=fontsize)
+    ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
+                  fontsize=fontsize)
+    spacing = coord_grid[1, 1] - coord_grid[0, 0]
+    ax.set_xlim(coord_grid[0, 0] - spacing, coord_grid[-1, -1] + spacing)
+    ax.set_ylim(coord_grid[0, 0] - spacing, coord_grid[-1, -1] + spacing)
     plt.show()
 
 
@@ -168,7 +60,6 @@ def plot_2D_gp_contour(psi_s, coord_grid, figside, truth, range_No,
     coord_grid = 2D np array of floats
     figside = float, in inches how big the figure should be
     truth = tuple of floats that denotes lambDa and rho
-
     """
     lambDa, rho = truth
     char_length = char_dim(rho)
@@ -182,14 +73,14 @@ def plot_2D_gp_contour(psi_s, coord_grid, figside, truth, range_No,
     im = ax.contourf(xg, yg, psi_s)
     unit = "arbitrary unit"
     ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
-                fontsize=20)
+                  fontsize=20)
     ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
-                fontsize=20)
+                  fontsize=20)
     ax.set_title(r"ExpSq kernel: $\lambda=$" +
-                "{0}, ".format(lambDa) + r"$\rho=$" +
-                "{0:.2f},".format(rho) +
-                r" $ l=$" + "{0:.2f}".format(char_length),
-                fontsize=20)
+                 "{0}, ".format(lambDa) + r"$\rho=$" +
+                 "{0:.2f},".format(rho) +
+                 r" $ l=$" + "{0:.2f}".format(char_length),
+                 fontsize=20)
     fig.colorbar(im, ax=ax, fraction=0.04)
     plt.show()
     return
@@ -268,7 +159,8 @@ def histplot2d_part(ax, x, y, prob=None, N_bins=100, histrange=None,
     prefix = [string] prefix of output file
     prob = [None] or [1D array of N floats] weights to apply to each (x,y) pair
     N_bins = [integer] the number of bins in the x and y directions
-    histrange = [None] or [array of floats: (x_min,x_max,y_min,y_max)] the range
+    histrange = [None] or [array of floats: (x_min,x_max,y_min,y_max)]
+        the range
         over which to perform the 2D histogram and estimate the confidence
         intervals
     x_lim = [None] or [array of floats: (x_min,x_max)] min and max of the range
@@ -397,8 +289,9 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
                 assert key in var_list, "key {0} in the list ".format(key) + \
                     "of 'truth' value not present in var_list"
 
-    for var in var_list:
-        assert var in data.columns, "variable to be plotted not in df"
+    if type(var_list) is dict:
+        for var in var_list:
+            assert var in data.columns, "variable to be plotted not in df"
 
     if axlabels is None:
         axlabels = {key: key for key in var_list}
@@ -471,11 +364,16 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
             for label in labels:
                 label.set_rotation(xlabel_to_rot[var_list[ix]])
 
+    if type(data) is dict or type(data) is pd.core.frame.DataFrame:
+        prob = data["prob"]
+    else:
+        prob = np.ones(data.shape[1])
+
     # start plotting the diagonal
     for i in range(N):
         print "N_bins = {0}".format(N_bins[var_list[i]])
         histplot1d_part(axarr[i, i], np.array(data[var_list[i]]),
-                        np.array(data['prob']),
+                        prob,
                         N_bins=N_bins[var_list[i]],
                         histrange=histran[var_list[i]],
                         x_lim=axlims[var_list[i]])
@@ -485,7 +383,7 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
         for j in range(i):
             histplot2d_part(axarr[i, j], np.array(data[var_list[j]]),
                             np.array(data[var_list[i]]),
-                            prob=np.array(data['prob']),
+                            prob=prob,
                             N_bins=Nbins_2D[(var_list[j], var_list[i])],
                             x_lim=axlims[var_list[j]],
                             y_lim=axlims[var_list[i]])
@@ -504,9 +402,5 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
         plt.savefig(path + prefix + suffix, dpi=200, bbox_inches='tight')
 
     return
-
-
-if __name__ == "__main__":
-    pass
 
 

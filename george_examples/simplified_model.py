@@ -88,8 +88,10 @@ def generate_data(params, N, rng=(-7, 7)):
     return t, y, yerr
 
 
+def find_jacobian():
+    return
+
 if __name__ == "__main__":
-    #np.random.seed(1331)
     np.random.seed(2)
 
     truth = np.array([1., 1.])
@@ -111,6 +113,7 @@ if __name__ == "__main__":
     pl.errorbar(t, y, yerr=yerr, fmt=".k", capsize=0)
 
     for s in samples[np.random.randint(len(samples), size=24)]:
+        # this step from the example code shows that s in in log space ...
         gp = george.GP(np.exp(s[0]) * kernels.ExpSquaredKernel(np.exp(s[1])))
         gp.compute(t, yerr)
         m = gp.sample_conditional(y, x)
