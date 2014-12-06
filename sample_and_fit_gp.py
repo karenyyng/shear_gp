@@ -11,7 +11,9 @@ from george import kernels
 
 
 def to_george_param(p):
-    """convert lambDa and rho to the parameters of George"""
+    """convert lambDa and rho to the parameters of George
+    :param p = tuple / list of two parameters
+    """
     lambDa, rho = p
     assert rho >= 0. and rho <= 1., \
         "input value for rho is {0},".format(rho) + \
@@ -87,6 +89,7 @@ def standardize_data(psi):
 
 # -------- helper functions for calling emcee ---------------
 
+
 def lnlike_gp(truth, coord, psi, psi_err):
     hp = truth[:2]
     p = truth[2:]
@@ -129,13 +132,15 @@ def lnprob_gp(truth, coords, psi, psi_err, prior_vals=[[-1, 1], [-1, 0]]):
     hp = truth[:2]
     #p = truth[2:]  #
     lp = lnprior_gp(hp, prior_vals=prior_vals)
+
     if not np.isfinite(lp):
         return -np.inf
     return lp + lnlike_gp(truth, coords, psi, psi_err)
 
 
 def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
-           prior_vals=[[-1, 1], [-1, 0]]):
+           prior_vals=[[-1, 1], [-1, 0]], burnin_chain_len=int(1e3),
+           conver_chain_len=int(5e3)):
     """
     :param
     initial = list / array of initial guesses of the truth value of the hp
@@ -143,30 +148,51 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
         t = numpy array of coord grid,
         y = flattened (1D) numpy array of data,
         yerr = flattened (1D) numpy array of data err
+    nwalkers = integer, number of MCMC chains to use
+    guess_dev_frac = float, has to be > 0 and around 1,
+        initial values of each chain is
+        (init_value * (1 + guess_dev_frac * rand_float)) where rand_float
+        is drawn from a unit variance normal
     """
     ndim = len(initial)
+
+    # initialize starting points
     p0 = [np.array(initial) +
           guess_dev_frac * np.array(initial) * np.random.randn(ndim)
           for i in xrange(nwalkers)]
 
-    map(lambda x: print("initial guesses was {0}".format(x)), p0)
+    map(lambda x: print("Initial guesses were {0}".format(x)), p0)
 
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, args=data,
                                     kwargs={"prior_vals": prior_vals})
 
-    print("Running burn-in")
-    p0, lnp, _ = sampler.run_mcmc(p0, 500)
+    print("Running burn-in with length {0:d}".format(burnin_chain_len))
+    p0, lnp, _ = sampler.run_mcmc(p0, burnin_chain_len)
+    sampler_acceptance_check(sampler)
     sampler.reset()
 
-    print("Running second burn-in")
+    print("Running second burn-in with length {0:d}".format(burnin_chain_len))
     p = p0[np.argmax(lnp)]
-    p0 = [p + 1e-8 * np.random.randn(ndim) for i in xrange(nwalkers)]
-    p0, _, _ = sampler.run_mcmc(p0, 500)
+    p0 = [p + guess_dev_frac * np.random.randn(ndim) for i in xrange(nwalkers)]
+    p0, _, _ = sampler.run_mcmc(p0, burnin_chain_len)
+    sampler_acceptance_check(sampler)
     sampler.reset()
 
-    print("Running production")
-    p0, _, _ = sampler.run_mcmc(p0, 1000)
-    print("the optimized p0 is {0}".format(p0))
+    print("Running production chain with length {0}".format(conver_chain_len))
+    p0, _, _ = sampler.run_mcmc(p0, conver_chain_len)
+    print("the optimized p0 values are \n{0}".format(p0))
 
     return sampler, p0
 
+
+def sampler_acceptance_check(sampler):
+    if np.any(sampler.naccepted < 0.2):
+        raise ValueError("Initial guesses may be bad /" +
+                         "model may be bad \n"
+                         "Acceptance rate is < 0.2, currently at " +
+                         "{0}".format(sampler.naccepted))
+    return None
+
+
+def Rubin_Gelman_Rsq_score():
+    return
