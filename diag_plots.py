@@ -404,3 +404,7 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
     return
 
 
+def trace_plot(sampler):
+    """
+    """
+    return
