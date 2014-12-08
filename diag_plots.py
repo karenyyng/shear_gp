@@ -1,5 +1,6 @@
 """contains code for all the diagnostic plots for shear_gp project
 """
+from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 from astrostats import biweightLoc, bcpcl
@@ -371,7 +372,7 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
 
     # start plotting the diagonal
     for i in range(N):
-        print "N_bins = {0}".format(N_bins[var_list[i]])
+        print("N_bins = {0}".format(N_bins[var_list[i]]))
         histplot1d_part(axarr[i, i], np.array(data[var_list[i]]),
                         prob,
                         N_bins=N_bins[var_list[i]],
@@ -398,13 +399,43 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
                 axarr[i, j].axhline(truth[var_list[i]], color='r')
 
     if save:
-        print "saving plot to {0}".format(path + prefix + suffix)
+        print("saving plot to {0}".format(path + prefix + suffix))
         plt.savefig(path + prefix + suffix, dpi=200, bbox_inches='tight')
 
     return
 
 
-def trace_plot(sampler):
+def trace_plot(sampler, labels, truth=None, fontsize=14):
+    """visualize the MCMC steps to eyeball if burn in is sufficient / if
+    convergence is achieved
+    :params sampler: sampler object from emcee
+    :params labels: list of strings, same length as the number of variables
+    :params truth: list of floats,
+
+    :stability: works
+    :note: thinking of having different trace plots for each chain,
+       right now we just glue the chains together, if the burn-in was
+       insufficient, we 'd see some weird discontinuities
     """
-    """
-    return
+    varNo = sampler.flatchain.shape[1]
+    assert len(labels) >= varNo, \
+        "list of labels should be of the same length or more as the \n" + \
+        "number of variables"
+
+    f, ax = plt.subplots(nrows=varNo, sharex=True)
+    ax[0].set_title("acceptance percent is {0:.2f}%".format(
+        np.mean(sampler.acceptance_fraction) * 100.), size=fontsize)
+
+    # plot traceplot of each variable one by one
+    for i in range(varNo):
+        ax[i].plot(sampler.flatchain[:, i], alpha=0.7)
+        ax[i].set_ylabel(labels[i], size=fontsize)
+
+        # add horizontal line to show truth value if available
+        if truth is not None:
+            ax[i].axhline(truth[i], color='r', label="true value")
+            ax[i].legend(loc='best')
+
+    ax[-1].set_xlabel('MCMC step number', size=fontsize)
+
+    return None

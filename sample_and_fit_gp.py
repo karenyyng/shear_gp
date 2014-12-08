@@ -140,7 +140,7 @@ def lnprob_gp(truth, coords, psi, psi_err, prior_vals=[[-1, 1], [-1, 0]]):
 
 def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
            prior_vals=[[-1, 1], [-1, 0]], burnin_chain_len=int(1e3),
-           conver_chain_len=int(5e3)):
+           conver_chain_len=int(5e3), a=2.0):
     """
     :param
     initial = list / array of initial guesses of the truth value of the hp
@@ -153,6 +153,7 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
         initial values of each chain is
         (init_value * (1 + guess_dev_frac * rand_float)) where rand_float
         is drawn from a unit variance normal
+    a = float, proposal scale parameter, see GW 10 or the emcee paper at
     """
     ndim = len(initial)
 
@@ -163,7 +164,7 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
 
     map(lambda x: print("Initial guesses were {0}".format(x)), p0)
 
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, args=data,
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a, args=data,
                                     kwargs={"prior_vals": prior_vals})
 
     print("Running burn-in with length {0:d}".format(burnin_chain_len))
