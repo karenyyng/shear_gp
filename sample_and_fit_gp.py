@@ -32,11 +32,18 @@ def char_dim(rho):
     return np.sqrt(-1. / np.log(rho))
 
 
+def make_grid(rng, spacing):
+    # use regular grid
+    xg = np.arange(rng[0], rng[1], spacing)
+    yg = np.arange(rng[0], rng[1], spacing)
+    return np.array([[x, y] for x in xg for y in yg])
+
+
 def generate_2D_data(truth, spacing, rng=(0., 60.), noise_amp=1e-4,
                      george_param=True):
     """
     :param:
-    truth = list of floats, first two the hyperparameters for the GP
+    truth = list of floats, first two are the hyperparameters for the GP
         the rest of the floats are for the model
     spacing = float, spacing between grid points
     rng = tuple of two floats, end points of the grid in each dimension
@@ -44,9 +51,9 @@ def generate_2D_data(truth, spacing, rng=(0., 60.), noise_amp=1e-4,
         required by george
 
     :return:
-    coords = grid points
-    psi = GP sample values in 1D
-    psi_err = gaussian noise
+    coords = 2D numpy array, grid points
+    psi = numpy array, GP sample values in 1D
+    psi_err = numpy array, gaussian noise
     """
     # by default the mean vector from which the Gaussian data
     # is drawn is zero
@@ -56,10 +63,7 @@ def generate_2D_data(truth, spacing, rng=(0., 60.), noise_amp=1e-4,
 
     gp = george.GP(truth[0] * kernels.ExpSquaredKernel(truth[1], ndim=2))
 
-    # use regular grid
-    xg = np.arange(rng[0], rng[1], spacing)
-    yg = np.arange(rng[0], rng[1], spacing)
-    coords = np.array([[x, y] for x in xg for y in yg])
+    coords = make_grid(rng, spacing)
 
     psi = gp.sample(coords)
 
@@ -71,6 +75,15 @@ def generate_2D_data(truth, spacing, rng=(0., 60.), noise_amp=1e-4,
     psi += psi_err   #  * np.random.randn(len(psi))
 
     return coords, psi, psi_err
+
+
+def draw_cond_pred(s_param, fine_coords, psi, psi_err, coords):
+    """
+    """
+    gp = george.GP(s_param[0] *
+                   kernels.ExpSquaredKernel(s_param[1], ndim=2))
+    gp.compute(coords, psi_err)
+    return gp.sample_conditional(psi, fine_coords)
 
 #------- to be written ------------------------------------
 
@@ -104,17 +117,19 @@ def lnlike_gp(truth, coord, psi, psi_err):
     return gp.lnlikelihood(psi - model(p, coord))
 
 
-def lnprior_gp(hp, prior_vals=None):
-    prior_vals = np.array(prior_vals)
-
+def lnprior_gp(hp, prior_vals=None, verbose=False):
     if prior_vals is not None:
+        prior_vals = np.array(prior_vals)
         assert prior_vals.shape[0] == len(hp), \
             "wrong # of rows in prior_vals {0}".format(prior_vals.shape[0]) + \
             " that do not match no of params {0}".format(len(hp))
         assert prior_vals.shape[1] == 2, \
             "wrong # of cols in prior_vals {0}".format(prior_vals.shape[2])
     else:
-        prior_vals = [[-1, 1], [-1, 0.2]]
+        prior_vals = [[-1, 2.], [0., 1.0]]
+        if verbose:
+            print("No prior vals given, setting them to " +
+                  "{0}".format(prior_vals))
 
     # uniform in the log spacing - i didn't initialize this correctly before
     lna, lntau = hp[:2]
@@ -138,8 +153,14 @@ def lnprob_gp(truth, coords, psi, psi_err, prior_vals=[[-1, 1], [-1, 0]]):
     return lp + lnlike_gp(truth, coords, psi, psi_err)
 
 
+def draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers):
+    return [np.array(initial) +
+            guess_dev_frac * np.array(initial) * np.random.randn(ndim)
+            for i in xrange(nwalkers)]
+
+
 def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
-           prior_vals=[[-1, 1], [-1, 0]], burnin_chain_len=int(1e3),
+           prior_vals=[[0., 2.], [0., 1]], burnin_chain_len=int(1e3),
            conver_chain_len=int(5e3), a=2.0):
     """
     :param
@@ -154,15 +175,25 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
         (init_value * (1 + guess_dev_frac * rand_float)) where rand_float
         is drawn from a unit variance normal
     a = float, proposal scale parameter, see GW 10 or the emcee paper at
+        http://arxiv.org/abs/1202.3665, increase value to decrease
+        acceptance_fraction and vice versa
     """
     ndim = len(initial)
 
-    # initialize starting points
-    p0 = [np.array(initial) +
-          guess_dev_frac * np.array(initial) * np.random.randn(ndim)
-          for i in xrange(nwalkers)]
+    # initialize starting points and make sure that the initial guesses
+    # are within the prior range
+    count = 0
+    p0 = draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers)
+    while(np.sum(map(lambda x: lnprior_gp(x, prior_vals=prior_vals), p0))):
+        p0 = draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers)
+        count += 1
+        if count > 1e3:
+            raise ValueError("Cannot initialize reasonable chain values " +
+                             "within prior range")
 
     map(lambda x: print("Initial guesses were {0}".format(x)), p0)
+    # needs a check here to make sure that the initial guesses are not
+    # outside the prior range
 
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a, args=data,
                                     kwargs={"prior_vals": prior_vals})
@@ -187,11 +218,11 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
 
 
 def sampler_acceptance_check(sampler):
-    if np.any(sampler.naccepted < 0.2):
-        raise ValueError("Initial guesses may be bad /" +
-                         "model may be bad \n"
-                         "Acceptance rate is < 0.2, currently at " +
-                         "{0}".format(sampler.naccepted))
+    if np.any(sampler.acceptance_fraction < 0.2):
+        error_msg = "Initial guesses may be bad / model may be bad \n" + \
+                    "Acceptance rate is < 0.2, currently at \n" + \
+                    str(sampler.acceptance_fraction)
+        raise ValueError(error_msg)
     return None
 
 

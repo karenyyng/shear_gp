@@ -19,7 +19,8 @@ def comb_zip(ls1, ls2):
 
 
 def plot_2D_gp_samples(psi_s, coord_grid, figside, truth, range_No,
-                       fontsize=15, unit="arbitrary unit"):
+                       fontsize=15, unit="arbitrary unit",
+                       truth_label=[r"$\theta_1$", r"$\theta_2^2$"]):
     """
     :params
     psi_s = flattened (1D) version of the psi_s data
@@ -33,13 +34,13 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, truth, range_No,
     color = psi_s
     fig, ax = plt.subplots()
     im = plt.scatter(coord_grid.transpose()[1], coord_grid.transpose()[0],
-                     s=35, cmap=plt.cm.jet, c=color)
+                     s=35, cmap=plt.cm.gist_heat, c=color, linewidths=0.3)
     #fig.set_figwidth(figside * 1.04)
 
     fig.set_figheight(figside)
     fig.colorbar(im, ax=ax, fraction=0.04)
-    ax.set_title(r"ExpSq kernel: $\lambda=$" +
-                 "{0:.2f}, ".format(lambDa) + r"$\rho=$" +
+    ax.set_title(r"ExpSq kernel: {0} =".format(truth_label[0]) +
+                 "{0:.2f}, ".format(lambDa) + truth_label[1] + "=" +
                  "{0:.2f},".format(rho) +
                  r" $ l=$" + "{0:.2f}".format(char_length),
                  fontsize=fontsize)
@@ -71,7 +72,7 @@ def plot_2D_gp_contour(psi_s, coord_grid, figside, truth, range_No,
     fig.set_figwidth(figside)
 
     ax = fig.add_subplot(111, aspect='equal')
-    im = ax.contourf(xg, yg, psi_s)
+    im = ax.contourf(xg, yg, psi_s, cmap=plt.cm.gist_heat)
     unit = "arbitrary unit"
     ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
                   fontsize=20)
@@ -242,8 +243,9 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
     """ create a N by N matrix of plots
     with the top plot of each row showing a density plot in 1D
     and the remaining plots being 2D contour plots
-    :params:
-        df = dataframe / dictionary / record array
+
+    :params df:
+        dataframe / dictionary / record array
         that contain the data of all the variables to be plots
     space = float, px of space that is added between subplots
     var_list = list of strings - denotes the column header names
@@ -271,7 +273,11 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
     path = string, path of the output plot file
     suffix = string, file extension of the output plot file
 
-    Stability: Not entirely tested, use at own risk
+    :return estimates:
+        dict of estimates, each list of estiamte is in the form of
+        [loc, ll_68, ul_68, ll_95, ul_95]
+
+    stability: works but use at own risk
     """
     from matplotlib.ticker import MaxNLocator
 
@@ -370,14 +376,16 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
     else:
         prob = np.ones(data.shape[1])
 
-    # start plotting the diagonal
+    # start plotting the diagonal and storing location and confidence level
+    # estimates
+    est = {}
     for i in range(N):
         print("N_bins = {0}".format(N_bins[var_list[i]]))
-        histplot1d_part(axarr[i, i], np.array(data[var_list[i]]),
-                        prob,
-                        N_bins=N_bins[var_list[i]],
-                        histrange=histran[var_list[i]],
-                        x_lim=axlims[var_list[i]])
+        est[var_list[i]] = histplot1d_part(axarr[i, i],
+                                           np.array(data[var_list[i]]),
+                                           prob, N_bins=N_bins[var_list[i]],
+                                           histrange=histran[var_list[i]],
+                                           x_lim=axlims[var_list[i]])
 
     # start plotting the lower triangle when row no > col no
     for i in range(N):
@@ -402,7 +410,7 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
         print("saving plot to {0}".format(path + prefix + suffix))
         plt.savefig(path + prefix + suffix, dpi=200, bbox_inches='tight')
 
-    return
+    return est
 
 
 def trace_plot(sampler, labels, truth=None, fontsize=14):
