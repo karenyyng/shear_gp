@@ -1,0 +1,217 @@
+---
+title: "A GP model for shear fields"
+author: "Michael D. Schneider"
+date: "December 9, 2014"
+output: ioslides_presentation
+---
+
+## Basic premise
+
+We model the 2D lens potential $\psi$ as a Gaussian Process (GP) model,
+$$
+\psi \sim {\rm GP}(0, \Sigma),
+$$
+where the GP covariance $\Sigma(\vec{x}, \vec{y})$ is a function of two 2D position vectors to denote the covariance of the realizations of the lens potential at sky positions $\vec{x}$ and $\vec{y}$.
+
+## Observable lensing quantities
+
+- The lensing convergence and shear are 2nd derivatives of the lens potential. 
+- **Because the derivative of a GP is also a GP,** the vector of $\mathbf{s}\equiv (\kappa, \gamma_1, \gamma_2)$ is GP distributed. 
+- The covariance of $\mathbf{s}$ is given by 4th derivatives of the covariance of $\Sigma$ of $\psi$.
+That is,
+$$
+{\rm Cov}(\psi_{,ij}(\vec{x}), \psi_{,k\ell}(\vec{y})) = 
+\Sigma_{,x_{i}x_{j}y_{k}y_{\ell}}(\vec{x}, \vec{y}).
+$$
+
+## GP covariance parameterizations
+
+Generally, we will write the GP covariance as the product of a precision parameter $\lambda$ and a 'kernel' $k$,
+$$
+\Sigma(\vec{x},\vec{y}) \equiv \lambda^{-1} k(r^{2}(\vec{x}, \vec{y}, D)),
+$$
+where,
+$$
+r^{2} \equiv (\vec{x}-\vec{y})^{T} D (\vec{x}-\vec{y})
+$$
+for some metric $D^{-1}$.
+
+## GP kernels in george
+
+The [george](http://dan.iel.fm/george/current/user/kernels/#radial-kernels) python package has a number of GP kernels already implemented. Two common interesting ones are:
+
+1. Squared exponential kernel,
+$$
+k(r^2) = \exp(-\frac{1}{2}r^{2})
+$$
+2. Matern kernels with parameter $\nu$ (only $\nu=(3/2, 5/2)$ implemented in george),
+$$
+k_{\nu}(r^2) = \frac{1}{\Gamma(\nu)2^{\nu-1}} (2\nu r^2)^{\nu/2} 
+K_{\nu}(\sqrt{2\nu r^2}),
+$$
+where $K_{\nu}$ is the modified Bessel function of the 2nd kind.
+
+
+# GP covariance derivatives
+
+## General relations (1): derivatives of $r^2$
+From before,
+$$
+r^{2} \equiv (\vec{x}-\vec{y})^{T} D (\vec{x}-\vec{y}).
+$$
+Then,
+$$
+\frac{\partial r^2}{\partial x_{i}} = [D(\vec{x}-\vec{y})]_{i} \equiv X_{i}
+$$
+$$
+\frac{\partial r^2}{\partial y_{i}} = -X_{i}
+$$
+$$
+{\rm Hess}_{ij}(r^{2}) = D_{ij} \left(
+\begin{array}{cc}
+1 & -1 \\
+-1 & 1
+\end{array}
+\right)
+$$
+
+## General relations (2a): derivatives of $\Sigma$
+The 1st, 2nd, and 4th derivatives of $\Sigma$ that we need are,
+$$
+\Sigma_{,x_{i}} = \lambda^{-1} k^{'}r^{2}_{, x_{i}}
+$$
+$$
+\Sigma_{,x_{i}x_{j}} = \lambda^{-1}\left[
+k^{''} r^{2}_{,x_{j}} r^{2}_{,x_{i}}
++ k^{'} r^{2}_{,x_{i}x_{j}}
+\right]
+$$
+$$
+\Sigma_{,x_{i}x_{j}y_{k}y_{\ell}} = \lambda^{-1}
+[
+k^{''''} r^{2}_{,x_i} r^{2}_{,x_j} r^{2}_{,y_k} r^{2}_{,y_{\ell}}
++ k^{'''} \left(r^{2}_{,x_i x_j} r^{2}_{,y_k} r^{2}_{,y_{\ell}} + 5{\rm perm.}\right)
+\\
++ k^{''} \left(r^{2}_{,x_i x_j} r^{2}_{,y_{k}y_{\ell}} + 2{\rm perm.}\right)
+]
+$$
+where primes on $k$ denote derivatives with respect to $r^{2}$.
+
+## General relations (2b): derivatives of $\Sigma$ (simplified)
+$$
+\Sigma_{,(x,y)_{i}} = \pm\lambda^{-1} k^{'}X_{i}
+$$
+$$
+\Sigma_{,x_{i}x_{j}} = \lambda^{-1}\left[
+k^{''} X_{i}X_{j}
++ k^{'} D_{ij}
+\right]
+$$
+$$
+\Sigma_{,x_{i}x_{j}y_{k}y_{\ell}} = \lambda^{-1}
+[
+k^{''''} X_{i}X_{j}X_{k}X_{\ell}
++ k^{'''} \left(D_{ij}X_{k}X_{\ell} + 5{\rm perm.}\right)
+\\
++ k^{''} \left(D_{ij} D_{k\ell} + 2{\rm perm.}\right)
+]
+$$
+
+## Observations about GP covariances of convergence and shear
+
+- The derivatives of $\Sigma$ have terms that depend on 
+$X_{i} \equiv \left[D(\vec{x}-\vec{y})\right]_{i}$, which *increases* in magnitude
+with increasing separation on the sky. 
+**So, distant points can be highly correlated.**
+- In our nominal model, $D_{ij}\propto -\ln(\rho)$ where $\rho$ is the correlation 
+parameter for the GP. 
+- At small sky separations $X_{i}\approx 0$ and the covariance of the convergence or shear 
+$\sim D_{ij}^{2}\Sigma$. **So, the variance of the convergence and shear is enhanced by a factor $[\ln(\rho)]^2$ over that of the lens potential.**
+
+# Derivatives of specific GP kernels
+
+## Kernel derivatives: Squared exponential
+$$
+k(r^2) \equiv \exp(-\frac{1}{2}r^{2})
+$$
+
+Because there's just the exponential term, the $n$th derivatives are trivial,
+$$
+k^{(n)} = \left(-\frac{1}{2}\right)^{n} k
+$$
+
+## Final GP covariance derivatives: Squared exponential
+$$
+\Sigma_{,(x,y)_{i}} = \mp\frac{1}{2} X_{i} \Sigma
+$$
+$$
+\Sigma_{,x_{i}x_{j}} = \left[\frac{1}{4}X_{i}X_{j} 
+-\frac{1}{2}D_{ij}
+\right]\Sigma
+$$
+$$
+\Sigma_{,x_{i}x_{j}y_{k}y_{\ell}} =
+[
+\frac{1}{16} X_{i}X_{j}X_{k}X_{\ell}
+-\frac{1}{8} \left(D_{ij}X_{k}X_{\ell} + 5{\rm perm.}\right)
+\\
++ \frac{1}{4} \left(D_{ij} D_{k\ell} + 2{\rm perm.}\right)
+]\Sigma
+$$
+
+
+## Kernel derivatives: Matern (1)
+$$
+k_{\nu}(r^2) = \frac{1}{\Gamma(\nu)2^{\nu-1}} (2\nu r^2)^{\nu/2} 
+K_{\nu}(\sqrt{2\nu r^2}),
+$$
+The $n$th derivatives of the modified Bessel function of the 2nd kind 
+[can be represented by the Meijer G function](http://functions.wolfram.com/Bessel-TypeFunctions/BesselK/introductions/Bessels/05/).
+But, george only implements the cases $\nu=3/2, 5/2$ and the kernel has a simpler form for these cases,
+$$
+k_{\nu}(r^2) = p_{\nu}(r) \exp\left(-\sqrt{2\nu r^2}\right)
+$$
+where $p_{\nu}$ is a polynomial in $\sqrt{r^2}$.
+
+We'll consider the 1st-4th derivatives of this expression next.
+
+
+# Lensing parameters
+
+## Convergence and shear from lens potential
+
+$$
+\kappa = \frac{1}{2} \left(
+\psi_{,11} + \psi_{,22}
+\right)
+$$
+$$
+\gamma_1 = \frac{1}{2} \left(
+\psi_{,11} - \psi_{,22}
+\right)
+$$
+$$
+\gamma_2 = \frac{1}{2} \left(
+\psi_{,12} + \psi_{,21}
+\right)
+$$
+
+## Convergence and shear GP covariances
+
+$$
+{\rm Cov}(\kappa) = \frac{1}{4}\left(
+\Sigma_{,1111} + \Sigma_{,1122} + \Sigma_{,2211} + \Sigma_{,2222}
+\right)
+$$
+
+$$
+{\rm Cov}(\gamma_1) = \frac{1}{4}\left(
+\Sigma_{,1111} - \Sigma_{,1122} - \Sigma_{,2211} + \Sigma_{,2222}
+\right)
+$$
+
+$$
+{\rm Cov}(\gamma_2) = \frac{1}{4}\left(
+\Sigma_{,1212} + \Sigma_{,1221} + \Sigma_{,2112} + \Sigma_{,2121}
+\right)
+$$
