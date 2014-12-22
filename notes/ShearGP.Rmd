@@ -179,6 +179,7 @@ We'll consider the 1st-4th derivatives of this expression next.
 # Lensing parameters
 
 ## Convergence and shear from lens potential
+Note the subscripts correspond to derivatives w.r.t. spatial coords 
 
 $$
 \kappa = \frac{1}{2} \left(

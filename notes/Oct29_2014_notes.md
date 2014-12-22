@@ -38,7 +38,7 @@ later on.
 where $\lambda$ is called precision and $\rho$ the correlation, 
 \begin{align}
 \Sigma &= \Sigma(\lambda, \rho) \\  
-&= \lambda^{-1}K(\rho),
+&= \lambda^{-1}K(\rho) + I,
 \end{align} 
 
 and we may want a Mat$\'{e}$rn covariance function,
