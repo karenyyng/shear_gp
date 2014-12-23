@@ -7,10 +7,12 @@ output: ioslides_presentation
 
 # Our Gaussian process "model" for the  projected lensing potential 
 \begin{align}
-\psi(\vec{x}, \vec{y}) \sim N(0, \Sigma(\vec{x}, \vec{y}))
+\psi(\vec{t}) \sim N(0, \Sigma(\vec{t}, \vec{t}'))
 \end{align}
-which is a scalar field evaluated at the positions $(\vec{x}, \vec{y})$ where we have data
-points
+which is a scalar field evaluated at the positions $t_i = (\vec{x},
+\vec{y})_i$ where we have data points. As usual, first column, x is the first spatial
+dimension, y is the second one, the i-th row correspond to spatial
+coordinates of the i-th data point. 
 
 For inferring the convergence and shear, we need the 2nd spatial
 derivatives.
@@ -37,6 +39,9 @@ i.e. i, j = 1, 2, ..., n observations
 \frac{\partial^2 \psi}{\partial y \partial x}\right)
 \end{align*}
 
+
+
+
 # Covariances of the required functions 
 Note that $\psi, \kappa$ and $\gamma$ are scalar fields. 
 However, we are evaluating them at the locations of the data points
@@ -54,7 +59,7 @@ Also note expectation and derivative are both linear operators, so we can
 exchange their positions (and try not to let mathemticians read this and
 shoot us)
 \begin{align*}
-Cov_{ij}(\kappa) &= \mathbb{E}\left[ 
+{\rm Cov}_{ij}(\kappa) &= \mathbb{E}\left[ 
 (\kappa - \mathbb{E}[\kappa])|_i 
 (\kappa - \mathbb{E}[\kappa])|_j 
 \right]\\
@@ -104,7 +109,7 @@ Cov_{ij}(\kappa) &= \mathbb{E}\left[
 \right) \Sigma_{ij} \\
 \end{align*}
 \begin{align}
-Cov(\kappa)&= \frac{1}{4}\left(
+{\rm Cov}(\kappa)&= \frac{1}{4}\left(
 \Sigma_{,1111} + \Sigma_{,1122} + \Sigma_{,2211} + \Sigma_{,2222}
 \right)
 \end{align}
@@ -112,7 +117,7 @@ Cov(\kappa)&= \frac{1}{4}\left(
 Similarly,
 
 \begin{align*}
-Cov_{ij}(\gamma_1) &= \mathbb{E}\left[ 
+{\rm Cov}_{ij}(\gamma_1) &= \mathbb{E}\left[ 
 (\gamma_1- \mathbb{E}[\gamma_1])|_i 
 (\gamma_1- \mathbb{E}[\gamma_1])|_j 
 \right]\\
@@ -163,7 +168,7 @@ Cov_{ij}(\gamma_1) &= \mathbb{E}\left[
 \end{align*}
 
 \begin{align}
-Cov(\gamma_1)&= \frac{1}{4}\left(
+{\rm Cov}(\gamma_1)&= \frac{1}{4}\left(
 \Sigma_{,1111} - \Sigma_{,1122} - \Sigma_{,2211} + \Sigma_{,2222}
 \right)
 \end{align}
@@ -171,7 +176,7 @@ Cov(\gamma_1)&= \frac{1}{4}\left(
 And, 
 
 \begin{align*}
-&Cov_{ij}(\gamma_2) \\
+&{\rm Cov}_{ij}(\gamma_2) \\
 &= \mathbb{E}\left[ 
 (\gamma_2- \mathbb{E}[\gamma_2])|_i 
 (\gamma_2- \mathbb{E}[\gamma_2])|_j 
@@ -221,7 +226,7 @@ And,
 \end{align*}
 
 \begin{align}
-Cov(\gamma_2)&= \frac{1}{4}\left(
+{\rm Cov}(\gamma_2)&= \frac{1}{4}\left(
 \Sigma_{,1212} + \Sigma_{,1221} + \Sigma_{,2112} + \Sigma_{,2121}
 \right)
 \end{align}
@@ -234,6 +239,30 @@ Cov(\gamma_2)&= \frac{1}{4}\left(
 where $\beta = - 1/4 \ln \rho$, and $0 < \rho < 1$, note $\Sigma$ is an N
 $\times$ N matrix and the covariance functions of the derivatives should
 have the same dimension. 
+
+# The metric D  
+Since we are working in projected (2D) space, D is a 2 $\times$ 2 matrix.
+
+\begin{equation}
+r^2 = (t - t')^T D (t - t') 
+\end{equation}
+
+More explicitly, in the GP model:
+\begin{align*}
+r^2_{ij} & = (x_i - x_j, y_i - y_j)
+\left(
+\begin{array}{cc}
+D_{11} & D_{12} \\ D_{21} & D_{22} 
+\end{array}
+\right)
+\left(
+\begin{array}{c}
+x_i - x_j \\ y_i - y_j  
+\end{array}
+\right)
+\\
+\Sigma_{ij} &= \lambda^{-1} \exp\left( -\frac{\beta}{2} r^2_{ij} \right)
+\end{align*}
 
 # Summary: basic derivatives with the preceeding coefficients
 \begin{align}
