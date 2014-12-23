@@ -23,6 +23,7 @@ $$
 {\rm Cov}(\psi_{,ij}(\vec{x}), \psi_{,k\ell}(\vec{y})) = 
 \Sigma_{,x_{i}x_{j}y_{k}y_{\ell}}(\vec{x}, \vec{y}).
 $$
+where $i,j,k,l = 1, 2$ denoting the two spatial coordinates  
 
 ## GP covariance parameterizations
 
