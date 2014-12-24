@@ -464,11 +464,6 @@ signs for the permutation terms
 (D_{jh} D_{ik}\delta_{jh}\delta_{ik} + 2 {\rm perm.})) \Sigma 
 \end{align}
 
-## Test 1: 
-Let's check that our general expression of the 4th derivative of $\Sigma$
-is correct by working out an example 
-
-
 ## notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
  indices, e.g. 1122, nor 2211 nor 1111 etc., so
@@ -477,6 +472,10 @@ covariances on the diagonal compared to $\psi_s$
 
 ## Thoughts on implementation 
 * The metric object should incorporate the $\delta_{ij}$ condition for
- diagonal D, which will kill a lot of terms
+ diagonal D, which will kill a lot of terms (sorry for being pedantic
+about including $\delta$ since I don't want myself to forget about it)
 
 ## Comparison between parametrization of George and our parametrization
+## Test 1: 
+Let's check that our general expression of the 4th derivative of $\Sigma$
+is correct by working out an example 
