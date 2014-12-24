@@ -410,7 +410,7 @@ k_{,x_i y_h} &= -(\beta^2 X_h X_i - \beta \delta_{ih} D_{ih})k\\
 k_{,y_h y_k} &= (\beta^2 X_h X_k - \beta \delta_{hk} D_{hk})k 
 \end{align}
 
-## Term 1 of the 4th derivative 
+## Term 1 of the 4th derivative in eqn (20) 
 \begin{align*}
 k_{,x_j y_h y_k}
 &= \frac{\partial}{\partial y_k} k_{,x_j y_h}\\ 
@@ -455,7 +455,7 @@ k_{,y_h y_k} r^2_{,x_i x_j}
 \delta_{ij})k } 
 \end{align*}
 
-## Collect terms of $\Sigma_{,x_i x_j y_h y_k}$ 
+## Collect terms of $\Sigma_{,x_i x_j y_h y_k}$ by plugging them in eqn 20 
 All the relevant terms are boxed above, note that we have to figure out the
 signs for the permutation terms 
 \begin{align}
@@ -466,10 +466,17 @@ signs for the permutation terms
 
 ## Test 1: 
 Let's check that our general expression of the 4th derivative of $\Sigma$
-is correct 
+is correct by working out an example 
 
+
+## notes
+* $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
+ indices, e.g. 1122, nor 2211 nor 1111 etc., so
+ for small angular separation, only $\kappa$ and $\gamma_1$ has increased
+covariances on the diagonal compared to $\psi_s$  
 
 ## Thoughts on implementation 
-The metric object should incorporate the $\delta_{ij}$ condition.
+* The metric object should incorporate the $\delta_{ij}$ condition for
+ diagonal D, which will kill a lot of terms
 
 ## Comparison between parametrization of George and our parametrization
