@@ -459,9 +459,9 @@ k_{,y_h y_k} r^2_{,x_i x_j}
 All the relevant terms are boxed above, note that we have to figure out the
 signs for the permutation terms 
 \begin{align}
-\Sigma_{,x_i x_j y_h y_k} &= (\beta^4 X_h X_j X_k X_i +  
+\Sigma_{,x_i x_j y_h y_k} &= (\beta^4 X_h X_j X_k X_i -  
 \beta^3 (X_j X_i D_{hk} \delta_{hk} + 5 {\rm perm.}) - \beta^2
-D_{jh}\delta_{jh}\delta_{ik} + 2 {\rm perm.}) \Sigma 
+(D_{jh} D_{ik}\delta_{jh}\delta_{ik} + 2 {\rm perm.})) \Sigma 
 \end{align}
 
 ## Test 1: 
