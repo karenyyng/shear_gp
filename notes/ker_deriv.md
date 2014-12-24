@@ -350,7 +350,13 @@ where i = 1, 2
 \begin{align}
 r^2_{,x_i x_j} &= 2 \delta_{ij} D_{ij}\\ 
 r^2_{,y_h y_k} &= 2 \delta_{hk} D_{hk}\\ 
-r^2_{,x_i y_h} &= 2 \delta_{ih} D_{ih} 
+r^2_{,x_i y_h} &= -2 \delta_{ih} D_{ih} 
+\end{align}
+
+\begin{align}
+X_i &= [D(\vec{x} - \vec{y})]_i\\
+X_i, x_j &= D \delta_{ij} \\ 
+X_i, y_h &= -D \delta_{ih}  
 \end{align}
 
 ### derivatives of the kernel
@@ -365,20 +371,24 @@ k_{,y_h} &= \beta k X_h
 \end{align}
 
 \begin{align}
-X_i &= [D(\vec{x} - \vec{y})]_i\\
-X_i, x_j &= D \delta_{ij} \\ 
-X_i, y_h &= -D \delta_{ih} \\ 
-X_h, y_k &= D \delta_{ih}  
+k_{,x_i x_j} &= \frac{-\beta}{2}(k_{,x_j} r^2_{,x_i} + k r^2_{,x_i x_j})\\
+k_{,x_i x_j y_h} &= \frac{-\beta}{2}(k_,{x_j y_h} r^2_{,x_i} + k_{,x_j}
+r^2_{,x_i y_h} + k_{,y_h} r^2_{,x_i x_j})\\
+k_{,x_i x_j y_h y_k} &= \frac{-\beta}{2} 
+(k_{,x_j y_h y_k} r^2_{,x_i} +
+k_{,x_j y_h} r^2_{,x_i y_k} + 
+k_{,x_j y_k} r^2_{,x_i y_h} + 
+k_{,y_h y_k r^2_{,x_i x_j}} )
 \end{align}
 
 #### second derivatives 
+## just work on terms that are parts of the 4th kernel derivative 
 \begin{align*}
 k_{,x_i x_j} &= \frac{\partial}{\partial x_j} (-\beta k X_i)\\
 &= -\beta(k_{,x_j X_i} + k X_{i, x_j})\\ 
 &= -\beta(-\beta k X_j X_i + k \delta_{ij} D_{ij}) \\ 
 &= (\beta^2 X_j X_i - \beta \delta_{ij} D_{ij})k 
 \end{align*}
-
 
 \begin{align*}
 k_{,x_i y_h} &= \frac{\partial}{\partial y_h} (-\beta k X_i)\\
@@ -397,23 +407,69 @@ k_{,y_h y_k} &= \frac{\partial}{\partial y_h} (\beta k X_h)\\
 \begin{align}
 k_{,x_i x_j} &= (\beta^2 X_j X_i - \beta \delta_{ij} D_{ij})k\\ 
 k_{,x_i y_h} &= -(\beta^2 X_h X_i - \beta \delta_{ih} D_{ih})k\\ 
-k_{,y_h y_k} &= -(\beta^2 X_h X_k - \beta \delta_{hk} D_{hk})k 
+k_{,y_h y_k} &= (\beta^2 X_h X_k - \beta \delta_{hk} D_{hk})k 
 \end{align}
 
+## Term 1 of the 4th derivative 
+\begin{align*}
+k_{,x_j y_h y_k}
+&= \frac{\partial}{\partial y_k} k_{,x_j y_h}\\ 
+&= -\frac{\partial}{\partial y_k} (\beta^2 X_h X_j - \beta \delta_{jh} D_{jh})k\\
+&= (\beta^2 D_{hk} \delta_{hk} X_j + \beta^2 X_h D_{jk}\delta_{jk})k -
+(\beta^2 X_h X_j - \beta D_{jh} \delta_{jh})\beta X_k k
+\end{align*}
 
+\begin{align*}
+&k_{,x_j y_h y_k} r_{,x_i}^2\\
+&= 2[\beta^2 X_j D_{hk} \delta_{hk} + \beta^2 X_h D_{jk}\delta_{jk} +
+\beta^2 X_k D_{jh} \delta_{jh} - \beta^3 X_h X_j X_k] X_i k\\ 
+&=\boxed{2\beta^2[ 
+X_j X_i D_{hk} \delta_{hk} + 
+X_h X_i D_{jk} \delta_{jk} + 
+X_k X_i D_{jh} \delta_{jh}] k  
+- 2\beta^3 X_h X_j X_k X_i k} 
+\end{align*}
 
+## Term 2 of the 4th derivative 
+\begin{align*}
+k_{,x_j y_h} r^2_{,x_i y_k}
+&= - (\beta^2 X_h X_j - \beta D_{jh} \delta_{jh}) (-2D_{ik} \delta_{ik}k) \\  
+&= \boxed{(- 2 \beta^2  X_h X_j D_{ik} \delta_{ik} 
++2 \beta D_{jh} D_{ik} \delta_{jh} \delta_{ik}) k} 
+\end{align*}
 
-## want to work out general $\Sigma_{,x_i x_j y_h y_k}$ 
+## Term 3 of the 4th derivative 
+This is completely analogous to term 2 except the subscripts are slightly
+different
+\begin{align*}
+k_{,x_j y_k} r^2_{,x_i y_h}
+&=\boxed { (- 2 \beta^2  X_k X_j D_{ih} \delta_{ih} 
++2 \beta D_{jk} D_{ih} \delta_{jk} \delta_{ih}) k} 
+\end{align*}
 
+## Term 4 of the 4th derivative  
+\begin{align*}
+k_{,y_h y_k} r^2_{,x_i x_j}
+&= (\beta^2 X_k X_h - \beta D_{hk}\delta_{hk})k 2 D_{ij} \delta_{ij}\\ 
+&= \boxed{(2\beta^2 X_k X_h D_{ij} \delta_{ij} - 2\beta D_{ij} D_{hk} \delta_{hk}
+\delta_{ij})k } 
+\end{align*}
 
-## Comparison between parametrization of George and our parametrization
-
-
-
-## Coefficients in front of $\Sigma$ that we need for the kernel wrapper
-
+## Collect terms of $\Sigma_{,x_i x_j y_h y_k}$ 
+All the relevant terms are boxed above, note that we have to figure out the
+signs for the permutation terms 
+\begin{align}
+\Sigma_{,x_i x_j y_h y_k} &= (\beta^4 X_h X_j X_k X_i +  
+\beta^3 (X_j X_i D_{hk} \delta_{hk} + 5 {\rm perm.}) - \beta^2
+D_{jh}\delta_{jh}\delta_{ik} + 2 {\rm perm.}) \Sigma 
+\end{align}
 
 ## Test 1: 
 Let's check that our general expression of the 4th derivative of $\Sigma$
 is correct 
 
+
+## Thoughts on implementation 
+The metric object should incorporate the $\delta_{ij}$ condition.
+
+## Comparison between parametrization of George and our parametrization
