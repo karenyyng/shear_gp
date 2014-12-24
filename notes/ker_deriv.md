@@ -10,7 +10,7 @@ output: ioslides_presentation
 \psi \sim N(0, \Sigma(\vec{x}, \vec{y}))
 \end{align}
 which is a scalar field evaluated at the positions $x_i = (\vec{x_1},
-\vec{x_2})_i$ or $g_i = (\vec{y_1}, \vec{y_2})$  where we have data points. 
+\vec{x_2})_i$ or $y_i = (\vec{y_1}, \vec{y_2})_i$  where we have data points. 
 As usual, first column,
 $x_1$ or $y_1$ is the first spatial
 dimension, $x_2$ or $y_2$ is the second one, the i-th row correspond to spatial
@@ -129,7 +129,10 @@ shoot us)
 \end{align*}
 
 Now I have dropped the (m,n) subscripts and the following subscripts
-correspond to the spatial dimensions
+correspond to the spatial dimensions, the first two subscripts correspond
+to spatial derivatives w.r.t. x and evaluated for the m-th data points, the last two
+correspond to spatial derivatives w.r.t. y and evaluated for the n-th data
+points. 
 \begin{align}
 {\rm Cov}(\kappa(\vec{x}), \kappa(\vec{y}))
 &= \frac{1}{4}\left(
@@ -272,13 +275,14 @@ have the same dimension.
 
 # The metric D  
 \begin{equation}
-r^2 = (t - t')^T D (t - t') 
+r^2 = (\vec{x} - \vec{y})^T D (\vec{x} - \vec{y}) 
 \end{equation}
 
 Since we are working in projected (2D) space, D is a 2 $\times$ 2 matrix.
-More explicitly, in the GP model:
+More explicitly, I will use i,j,h,k as subscripts for the spatial
+dimensions and m, n for the observation number in the GP model:
 \begin{align*}
-r^2_{ij} & = (x_i - x_j, y_i - y_j)
+r^2_{mn} & = (x_{m1} - y_{m1}, x_{n2} - y_{n2})
 \left(
 \begin{array}{cc}
 D_{11} & D_{12} \\ D_{21} & D_{22} 
@@ -286,24 +290,130 @@ D_{11} & D_{12} \\ D_{21} & D_{22}
 \right)
 \left(
 \begin{array}{c}
-x_i - x_j \\ y_i - y_j  
+x_{m1} - y_{n1} \\ x_{m2} - y_{n2} 
 \end{array}
 \right)
 \\
-\Sigma_{ij} &= \lambda^{-1} \exp\left( -\frac{\beta}{2} r^2_{ij} \right)
+\Sigma_{mn} &= \lambda^{-1} \exp\left( -\frac{\beta}{2} r^2_{mn} \right)
 \end{align*}
 
-An example of $r^2$ with an Euclidean metric for a pair of data points, $t_i, t_j$
+An example of $r^2$ with an Euclidean metric for a pair of data points,
+$\vec{x}_i$ and $\vec{y}_j$ 
 would be:
 \begin{equation*}
-r^2 = (x_i-x_j)^2 + (y_i-y_j)^2 
+r_{mn}^2 = (x_{m1}-y_{n1})^2 + (x_{m2}-y_{n2})^2 
 \end{equation*}
 
-# Summary: basic derivatives with the preceeding coefficients
+In the following derivations, it is NOT important to keep the $m, n$
+subscripts. We are taking the derivatives w.r.t to the spatial
+dimensions, so I will drop the $m, n$ subscripts. 
+But keep in mind each
+forth derivative of $\Sigma$ with the indices written out should be a
+scalar, each is an element in the big $m \times n$ $\Sigma_{,x_i x_j y_h
+y_k}$ matrix. 
 
+# Summary: basic derivatives of components, assuming diagonal D  
+Derivation of the derivatives for a non-symmetric / non-diagonal D would
+give more terms ...
+
+\begin{align*}
+\frac{\partial r^2}{\partial x_i} 
+&=  \frac{\partial (x_q - y_q)D_{qr} (x_r
+- y_r)}{\partial x_i} \\ 
+&= \delta_{iq} D_{qr} (x_r - y_r) + (x_q - y_q)\delta_{iq} D_{qr}\\ 
+&= 2 D_{ii} (x_i - y_i) \\  
+&= 2 [D (\vec{x} - \vec{y})]_i  
+\end{align*}
+
+The third line in the above derivation is only true for diagonal D or else
+there are other summation terms.
+
+\begin{equation}
+r_{,x_i}= 2 [D (\vec{x} - \vec{y})]_i \equiv 2X_i
+\end{equation}
+
+Similarly, 
+\begin{align*}
+\frac{\partial r^2}{\partial y_h} &=  \frac{\partial (x_q - y_q)D_{qr} (x_r
+- y_r)}{\partial y_h} \\ 
+&= -\delta_{iq} D_{qr} (x_r - y_r) - (x_q - y_q)\delta_{iq} D_{qr}\\ 
+&= -2 [D (\vec{x} - \vec{y})]_h
+\end{align*}
+
+\begin{equation}
+r_{,y_h} = -2 [D (\vec{x} - \vec{y})]_h \equiv -2X_h
+\end{equation}
+
+where i = 1, 2 
+
+### Second derivatives of $r^2$ 
+\begin{align}
+r^2_{,x_i x_j} &= 2 \delta_{ij} D_{ij}\\ 
+r^2_{,y_h y_k} &= 2 \delta_{hk} D_{hk}\\ 
+r^2_{,x_i y_h} &= 2 \delta_{ih} D_{ih} 
+\end{align}
+
+### derivatives of the kernel
+\begin{equation*}
+\Sigma = \lambda^{-1} k 
+\end{equation*}
+
+\begin{align}
+k &= \exp{\left(\frac{-\beta}{2} r^2 \right)}\\
+k_{,x_i} &= \frac{-\beta}{2} k r^2_{,x_i} = -\beta k X_i\\ 
+k_{,y_h} &= \beta k X_h 
+\end{align}
+
+\begin{align}
+X_i &= [D(\vec{x} - \vec{y})]_i\\
+X_i, x_j &= D \delta_{ij} \\ 
+X_i, y_h &= -D \delta_{ih} \\ 
+X_h, y_k &= D \delta_{ih}  
+\end{align}
+
+#### second derivatives 
+\begin{align*}
+k_{,x_i x_j} &= \frac{\partial}{\partial x_j} (-\beta k X_i)\\
+&= -\beta(k_{,x_j X_i} + k X_{i, x_j})\\ 
+&= -\beta(-\beta k X_j X_i + k \delta_{ij} D_{ij}) \\ 
+&= (\beta^2 X_j X_i - \beta \delta_{ij} D_{ij})k 
+\end{align*}
+
+
+\begin{align*}
+k_{,x_i y_h} &= \frac{\partial}{\partial y_h} (-\beta k X_i)\\
+&= -\beta(k_{,y_h X_i} + k X_{i, y_h})\\ 
+&= -\beta(\beta k X_h X_i - k \delta_{ih} D_{ih}) \\ 
+&= -(\beta^2 X_h X_i - \beta \delta_{ih} D_{ih})k 
+\end{align*}
+
+\begin{align*}
+k_{,y_h y_k} &= \frac{\partial}{\partial y_h} (\beta k X_h)\\
+&= \beta(k_{,y_k X_h} + k X_{h, y_k})\\ 
+&= \beta(\beta k X_k X_h - k \delta_{hk} D_{hk}) \\ 
+&= (\beta^2 X_h X_k - \beta \delta_{hk} D_{hk})k 
+\end{align*}
+
+\begin{align}
+k_{,x_i x_j} &= (\beta^2 X_j X_i - \beta \delta_{ij} D_{ij})k\\ 
+k_{,x_i y_h} &= -(\beta^2 X_h X_i - \beta \delta_{ih} D_{ih})k\\ 
+k_{,y_h y_k} &= -(\beta^2 X_h X_k - \beta \delta_{hk} D_{hk})k 
+\end{align}
+
+
+
+
+## want to work out general $\Sigma_{,x_i x_j y_h y_k}$ 
 
 
 ## Comparison between parametrization of George and our parametrization
 
 
+
+## Coefficients in front of $\Sigma$ that we need for the kernel wrapper
+
+
+## Test 1: 
+Let's check that our general expression of the 4th derivative of $\Sigma$
+is correct 
 
