@@ -85,6 +85,9 @@ def draw_cond_pred(s_param, fine_coords, psi, psi_err, coords):
     gp.compute(coords, psi_err)
     return gp.sample_conditional(psi, fine_coords)
 
+
+
+
 #------- to be written ------------------------------------
 
 def jacobian():
@@ -97,8 +100,20 @@ def model(p, coords):
 
 
 def standardize_data(psi):
-    """ psi needs to be flattened to one dimension"""
-    return (psi - np.mean(psi)) / np.std(psi)
+    """ scales data to have mean zero and std. dev. of 1 ....
+    Not the best for data with outliers / heavy tails
+
+    """
+    psi = psi.copy()
+    return (psi - np.mean(psi.ravel())) / np.std(psi.ravel())
+
+
+def normalize_data(psi):
+    """scale data between the range of [0, 1] and returns a copy of the data
+    Not the best for data with outliers / heavy tails
+    """
+    psi = psi.copy()
+    return (psi - psi.ravel().min()) / (psi.ravel.max() - psi.ravel().min())
 
 # -------- helper functions for calling emcee ---------------
 
@@ -145,7 +160,7 @@ def lnprior_gp(hp, prior_vals=None, verbose=False):
 
 def lnprob_gp(truth, coords, psi, psi_err, prior_vals=[[-1, 1], [-1, 0]]):
     hp = truth[:2]
-    #p = truth[2:]  #
+    #p = truth[2:]
     lp = lnprior_gp(hp, prior_vals=prior_vals)
 
     if not np.isfinite(lp):

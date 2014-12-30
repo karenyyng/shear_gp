@@ -61,12 +61,13 @@ $$
 r^{2} \equiv (\vec{x}-\vec{y})^{T} D (\vec{x}-\vec{y}).
 $$
 Then,
-$$
+\begin{equation}
 \frac{\partial r^2}{\partial x_{i}} = [D(\vec{x}-\vec{y})]_{i} \equiv X_{i}
-$$
-$$
+\end{equation}
+
+\begin{equation}
 \frac{\partial r^2}{\partial y_{i}} = -X_{i}
-$$
+\end{equation}
 $$
 {\rm Hess}_{ij}(r^{2}) = D_{ij} \left(
 \begin{array}{cc}
@@ -99,16 +100,17 @@ $$
 where primes on $k$ denote derivatives with respect to $r^{2}$.
 
 ## General relations (2b): derivatives of $\Sigma$ (simplified)
-$$
+\begin{equation}
 \Sigma_{,(x,y)_{i}} = \pm\lambda^{-1} k^{'}X_{i}
-$$
-$$
+\end{equation}
+
+\begin{equation}
 \Sigma_{,x_{i}x_{j}} = \lambda^{-1}\left[
 k^{''} X_{i}X_{j}
 + k^{'} D_{ij}
 \right]
-$$
-$$
+\end{equation}
+\begin{equation}
 \Sigma_{,x_{i}x_{j}y_{k}y_{\ell}} = \lambda^{-1}
 [
 k^{''''} X_{i}X_{j}X_{k}X_{\ell}
@@ -116,7 +118,7 @@ k^{''''} X_{i}X_{j}X_{k}X_{\ell}
 \\
 + k^{''} \left(D_{ij} D_{k\ell} + 2{\rm perm.}\right)
 ]
-$$
+\end{equation}
 
 ## Observations about GP covariances of convergence and shear
 
@@ -142,15 +144,17 @@ k^{(n)} = \left(-\frac{1}{2}\right)^{n} k
 $$
 
 ## Final GP covariance derivatives: Squared exponential
-$$
+\begin{equation}
 \Sigma_{,(x,y)_{i}} = \mp\frac{1}{2} X_{i} \Sigma
-$$
-$$
+\end{equation}
+
+\begin{equation}
 \Sigma_{,x_{i}x_{j}} = \left[\frac{1}{4}X_{i}X_{j} 
 -\frac{1}{2}D_{ij}
 \right]\Sigma
-$$
-$$
+\end{equation}
+
+\begin{equation}
 \Sigma_{,x_{i}x_{j}y_{k}y_{\ell}} =
 [
 \frac{1}{16} X_{i}X_{j}X_{k}X_{\ell}
@@ -158,8 +162,7 @@ $$
 \\
 + \frac{1}{4} \left(D_{ij} D_{k\ell} + 2{\rm perm.}\right)
 ]\Sigma
-$$
-
+\end{equation}
 
 ## Kernel derivatives: Matern (1)
 $$
@@ -200,20 +203,20 @@ $$
 
 ## Convergence and shear GP covariances
 
-$$
+\begin{equation}
 {\rm Cov}(\kappa) = \frac{1}{4}\left(
 \Sigma_{,1111} + \Sigma_{,1122} + \Sigma_{,2211} + \Sigma_{,2222}
 \right)
-$$
+\end{equation}
 
-$$
+\begin{equation}
 {\rm Cov}(\gamma_1) = \frac{1}{4}\left(
 \Sigma_{,1111} - \Sigma_{,1122} - \Sigma_{,2211} + \Sigma_{,2222}
 \right)
-$$
+\end{equation}
 
-$$
+\begin{equation}
 {\rm Cov}(\gamma_2) = \frac{1}{4}\left(
 \Sigma_{,1212} + \Sigma_{,1221} + \Sigma_{,2112} + \Sigma_{,2121}
 \right)
-$$
+\end{equation}

@@ -436,7 +436,7 @@ def trace_plot(sampler, labels, truth=None, fontsize=14):
 
     # plot traceplot of each variable one by one
     for i in range(varNo):
-        ax[i].plot(sampler.flatchain[:, i], alpha=0.7)
+        ax[i].plot(sampler.flatchain[:, i], alpha=0.5, color='grey')
         ax[i].set_ylabel(labels[i], size=fontsize)
 
         # add horizontal line to show truth value if available
