@@ -6,6 +6,7 @@ import emcee
 import numpy as np
 import george
 from george import kernels
+from scipy.special import gamma
 
 # ------- helper functions for generating functions -------------
 
@@ -86,9 +87,7 @@ def draw_cond_pred(s_param, fine_coords, psi, psi_err, coords):
     return gp.sample_conditional(psi, fine_coords)
 
 
-
-
-#------- to be written ------------------------------------
+#------- to be tested ------------------------------------
 
 def jacobian():
     return
@@ -115,8 +114,29 @@ def normalize_data(psi):
     psi = psi.copy()
     return (psi - psi.ravel().min()) / (psi.ravel.max() - psi.ravel().min())
 
-# -------- helper functions for calling emcee ---------------
 
+def invgamma_pdf(x, alpha, beta):
+    """pdf of inv gamma dist. with wiki parametrization
+
+    Params:
+        x (float / np.array): value to evalute at
+        alpha (float): scale parameter, real number > 0
+        beta (float): shape parameter, real number > 0
+
+    Returns:
+        float / an array of floats
+
+    Stability: passed one test
+
+    .. math::
+        f(x) = \frac{\beta^\alpha}{\Gamma(\alpha)}
+            x^{(-\alpha-1)} \exp\left(-\beta / x \right)
+    """
+    return beta ** alpha / gamma(alpha) * \
+               x ** (-alpha - 1.) * np.exp(-beta / x)
+
+
+# -------- helper functions for calling emcee ---------------
 
 def lnlike_gp(truth, coord, psi, psi_err):
     hp = truth[:2]
