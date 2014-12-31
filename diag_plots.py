@@ -3,10 +3,11 @@
 from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
-from astrostats import biweightLoc, bcpcl
+#from astrostats import biweightLoc, bcpcl
 from astroML import density_estimation as de
 from sample_and_fit_gp import char_dim
 import pandas as pd
+
 
 def find_bin_ix(binedges, loc):
     """find the index in the np array binedges that corresponds to loc"""
@@ -95,7 +96,7 @@ def histplot1d_part(ax, x, prob=None, N_bins='knuth', histrange=None,
     similar to histplot1d but for subplot purposes I believe
     '''
     # compare bin width to knuth bin width
-    #if type(N_bins) is int:
+    # if type(N_bins) is int:
     #    print "specified bin width is {0}, Knuth bin size is {1}".format(
     #        N_bins, knuth_N_bins)
     if N_bins == 'knuth':
@@ -190,9 +191,9 @@ def histplot2d_part(ax, x, y, prob=None, N_bins=100, histrange=None,
         if prob is not None:
             H, xedges, yedges = \
                 np.histogram2d(x, y, bins=N_bins,
-                                  range=[[histrange[0], histrange[1]],
-                                        [histrange[2], histrange[3]]],
-                                  weights=prob)
+                               range=[[histrange[0], histrange[1]],
+                                      [histrange[2], histrange[3]]],
+                               weights=prob)
         elif prob is None:
             H, xedges, yedges = np.histogram2d(
                 x, y, bins=N_bins, range=[[histrange[0], histrange[1]],
@@ -226,8 +227,8 @@ def histplot2d_part(ax, x, y, prob=None, N_bins=100, histrange=None,
     # can use pcolor or imshow to show the shading instead
     ax.pcolormesh(X, Y, H, cmap=plt.cm.gray_r, shading='gouraud')
     ax.contour(X, Y, H, (h_2sigma, h_1sigma), linewidths=(2, 2),
-            colors=((158 / 255., 202 / 255., 225 / 255.),
-                    (49 / 255., 130 / 255., 189 / 255.)))
+               colors=((158 / 255., 202 / 255., 225 / 255.),
+                       (49 / 255., 130 / 255., 189 / 255.)))
 
     if x_lim is not None:
         ax.set_xlim(x_lim)
@@ -291,12 +292,12 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
         assert len(truth) == N, "length of 'truth' values of variables " + \
             " needs to match the number of variables in var_list"
 
-        if type(truth) == dict:
+        if isinstance(truth, dict):
             for key in truth.keys():
                 assert key in var_list, "key {0} in the list ".format(key) + \
                     "of 'truth' value not present in var_list"
 
-    if type(var_list) is dict:
+    if isinstance(var_list, dict):
         for var in var_list:
             assert var in data.columns, "variable to be plotted not in df"
 
@@ -350,12 +351,12 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
 
     for n in range(N):
         # avoid overlapping lowest and highest ticks mark
-        #print "setting x and y tick freq for {0}".format((n, n))
+        # print "setting x and y tick freq for {0}".format((n, n))
         ax2 = axarr[n, n]
         ax2.xaxis.set_major_locator(MaxNLocator(nbins=6, prune="both"))
         ax2.yaxis.set_major_locator(MaxNLocator(nbins=6, prune="both"))
 
-    #print "setting x and y tick freq for {0}".format((i, j))
+    # print "setting x and y tick freq for {0}".format((i, j))
     for i in range(N):
         for j in range(N):  # range(i)
             ax2 = axarr[i, j]
@@ -371,7 +372,7 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
             for label in labels:
                 label.set_rotation(xlabel_to_rot[var_list[ix]])
 
-    if type(data) is dict or type(data) is pd.core.frame.DataFrame:
+    if isinstance(data, dict) or isinstance(data, pd.core.frame.DataFrame):
         prob = data["prob"]
     else:
         prob = np.ones(data.shape[1])
@@ -447,3 +448,69 @@ def trace_plot(sampler, labels, truth=None, fontsize=14):
     ax[-1].set_xlabel('MCMC step number', size=fontsize)
 
     return None
+
+
+def bcpcl(T, T_p, N_sigma):
+    '''
+    Author: W. A. Dawson
+    Calculates the bias corrected percent confidence limits.
+    -- Suppose that we have observed data (y1, y2, ..., yn) and use it to
+    estimate a population parameter Q (e.g. Q could be the true mean of the
+    entire population).
+    -- T is a statistic that estimates Q. For example T could be an estimate
+    of the true mean by calculating the mean of  (y1, y2, ..., yn).
+    -- Suppose that we create m bootstrap samples (y_p_1j, y_p_2j, ...,j_p_nj)
+    from observed sample  (y1, y2, ..., yn), where j is the jth bootstrap sample.
+    -- Then T_p_j is the jth bootstrap observation of T.  For example this
+    could be the mean of (y_p_1j, y_p_2j, ...,j_p_nj).
+
+    T = [float] e.g. biweight Location for (y1, y2, ..., yn)
+    T_p = [vector array] biwieght Locations for the bootstrap samples
+    N_sigma = the number of sigma to report the confidence limits for
+        e.g. for 95% confidence limits N_sigma=2
+    Return (lower, upper) confidence limits
+    '''
+
+    assert len(T_p) > 0, "length of bootstrapped stat needs to be > 0" + \
+        "if bootstrapped stat is computed from histogram, check if " + \
+        "histogram values are > 1"
+
+    # Number of bootstrap samples
+    m = numpy.size(T_p)
+    # Percentile confidence interval is defined as 100%(1-a), thus for 1sigma
+    # a=0.32
+    a = 1 - erf(N_sigma / numpy.sqrt(2))
+    # order the bootstrap sample values smallest to largest
+    index = numpy.argsort(T_p)
+    T_p = T_p[index]
+    # Calculate the bias correction term
+    mask = T_p < T
+    z_0 = norm.ppf(numpy.sum(mask) / m)
+    # Calculate the a1 and a2 values
+    a1 = norm.cdf(2 * z_0 + norm.ppf(a / 2))
+    a2 = norm.cdf(2 * z_0 + norm.ppf(1 - a / 2))
+    # Calculate the lower and upper indicies of lower and upper confidence
+    # intervals
+    id_L = numpy.int(m * a1) - 1
+    id_U = numpy.int(m * a2)
+    # Find the lower an upper confidence values
+    T_L = T_p[id_L]
+    T_U = T_p[id_U]
+    return T_L, T_U
+
+
+def biweightLoc(z, c=6):
+    '''Biweight statistic Location (similar to the mean) eqn 5
+    Author: W. A. Dawson
+    '''
+    M = numpy.median(z)
+    MAD = numpy.median(numpy.abs(z - M))
+    if MAD == 0:
+        raise ZeroDivisionError
+    u = (z - M) / (c * MAD)
+    mask_u = numpy.abs(u) < 1
+    z = z[mask_u]
+    u = u[mask_u]
+    Cbi = M + numpy.inner(z - M, (1 - u ** 2) ** 2) / \
+        numpy.sum((1 - u ** 2) ** 2)
+    return Cbi
