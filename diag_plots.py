@@ -60,8 +60,8 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, truth=None,
     plt.show()
 
 
-def plot_2D_gp_contour(psi_s, coord_grid, figside, range_No, truth=None,
-                       spacing, unit="arbitrary unit", *args):
+def plot_2D_gp_contour(psi_s, coord_grid, figside, range_No, spacing,
+                       truth=None, unit="arbitrary unit", *args):
     """
     :params
     psi_s = flattened (1D) version of the psi_s data
