@@ -21,19 +21,17 @@ def comb_zip(ls1, ls2):
     return [(lb1, lb2) for lb1 in ls1 for lb2 in ls2]
 
 
-def plot_2D_gp_samples(psi_s, coord_grid, figside, truth, range_No,
+def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, truth=None,
                        fontsize=15, unit="arbitrary unit",
                        truth_label=[r"$\theta_1$", r"$\theta_2^2$"]):
     """
-    :params
-    psi_s = flattened (1D) version of the psi_s data
-    coord_grid = 2D np array of floats
-    figside = float, in inches how big the figure should be
-    truth = tuple of floats that denotes lambDa and rho
+    Params:
+        psi_s (numpy array): flattened (1D) version of the psi_s data
+        coord_grid (2D np array of floats):
+        figside = float, in inches how big the figure should be
+        truth = tuple of floats that denotes lambDa and rho
     """
-    lambDa, rho = truth
     range_No = coord_grid[-1, -1]
-    char_length = char_dim(rho)
     color = psi_s
     fig, ax = plt.subplots()
     im = plt.scatter(coord_grid.transpose()[1], coord_grid.transpose()[0],
@@ -42,11 +40,16 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, truth, range_No,
 
     fig.set_figheight(figside)
     fig.colorbar(im, ax=ax, fraction=0.04)
-    ax.set_title(r"ExpSq kernel: {0} =".format(truth_label[0]) +
-                 "{0:.2f}, ".format(lambDa) + truth_label[1] + "=" +
-                 "{0:.2f},".format(rho) +
-                 r" $ l=$" + "{0:.2f}".format(char_length),
-                 fontsize=fontsize)
+
+    if truth is not None:
+        lambDa, rho = truth
+        char_length = char_dim(rho)
+        ax.set_title(r"ExpSq kernel: {0} =".format(truth_label[0]) +
+                     "{0:.2f}, ".format(lambDa) + truth_label[1] + "=" +
+                     "{0:.2f},".format(rho) +
+                     r" $ l=$" + "{0:.2f}".format(char_length),
+                     fontsize=fontsize)
+
     ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
                   fontsize=fontsize)
     ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
@@ -57,7 +60,7 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, truth, range_No,
     plt.show()
 
 
-def plot_2D_gp_contour(psi_s, coord_grid, figside, truth, range_No,
+def plot_2D_gp_contour(psi_s, coord_grid, figside, range_No, truth=None,
                        spacing, unit="arbitrary unit", *args):
     """
     :params
@@ -66,8 +69,6 @@ def plot_2D_gp_contour(psi_s, coord_grid, figside, truth, range_No,
     figside = float, in inches how big the figure should be
     truth = tuple of floats that denotes lambDa and rho
     """
-    lambDa, rho = truth
-    char_length = char_dim(rho)
     xg = np.arange(0, range_No, spacing)
     yg = xg
     fig = plt.figure()
@@ -81,11 +82,14 @@ def plot_2D_gp_contour(psi_s, coord_grid, figside, truth, range_No,
                   fontsize=20)
     ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
                   fontsize=20)
-    ax.set_title(r"ExpSq kernel: $\lambda=$" +
-                 "{0}, ".format(lambDa) + r"$\rho=$" +
-                 "{0:.2f},".format(rho) +
-                 r" $ l=$" + "{0:.2f}".format(char_length),
-                 fontsize=20)
+    if truth is not None:
+        lambDa, rho = truth
+        char_length = char_dim(rho)
+        ax.set_title(r"ExpSq kernel: $\lambda=$" +
+                    "{0}, ".format(lambDa) + r"$\rho=$" +
+                    "{0:.2f},".format(rho) +
+                    r" $ l=$" + "{0:.2f}".format(char_length),
+                    fontsize=20)
     fig.colorbar(im, ax=ax, fraction=0.04)
     plt.show()
     return
