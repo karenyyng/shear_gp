@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Code for this script is originally at:
+https://github.com/dfm/george/blob/master/docs/_code/model.py
+"""
 
 from __future__ import division, print_function
 
@@ -19,6 +23,7 @@ def model(params, t):
 
 
 def lnprior_base(p):
+    """ notice how the p are inferred in the original scale """
     amp, loc, sig2 = p
     if not -10 < amp < 10:
         return -np.inf
@@ -46,7 +51,9 @@ def fit_ind(initial, data, nwalkers=32):
 
 
 def lnlike_gp(p, t, y, yerr):
-    # a and tau needs to be exponentiated ?
+    """ notice how a and tau needs to be exponentiated
+    meaning that a and tau are supplied in the log scale
+    """
     a, tau = np.exp(p[:2])
     gp = george.GP(a * kernels.Matern32Kernel(tau))
     gp.compute(t, yerr)
@@ -54,6 +61,7 @@ def lnlike_gp(p, t, y, yerr):
 
 
 def lnprior_gp(p):
+    """more obvious that p is initiated in the log scale """
     lna, lntau = p[:2]
     if not -5 < lna < 5:
         return -np.inf
@@ -127,24 +135,24 @@ if __name__ == "__main__":
     pl.savefig("data.png", dpi=150)
 
     ## Fit assuming independent.
-    #print("Fitting independent")
-    #data = (t, y, 1.0 / yerr ** 2)
-    #truth_ind = [0.0, 0.0] + truth
-    #sampler = fit_ind(truth_ind, data)
+    # print("Fitting independent")
+    # data = (t, y, 1.0 / yerr ** 2)
+    # truth_ind = [0.0, 0.0] + truth
+    # sampler = fit_ind(truth_ind, data)
 
     ## Plot the samples in data space.
-    #print("Making plots")
-    #samples = sampler.flatchain
-    #x = np.linspace(-5, 5, 500)
-    #for s in samples[np.random.randint(len(samples), size=24)]:
-    #    pl.plot(x, model(s[2:], x)+s[0]*x+s[1], color="#4682b4", alpha=0.3)
-    #pl.title("results assuming uncorrelated noise")
-    #pl.savefig("ind-results.png", dpi=150)
+    # print("Making plots")
+    # samples = sampler.flatchain
+    # x = np.linspace(-5, 5, 500)
+    # for s in samples[np.random.randint(len(samples), size=24)]:
+    #     pl.plot(x, model(s[2:], x)+s[0]*x+s[1], color="#4682b4", alpha=0.3)
+    # pl.title("results assuming uncorrelated noise")
+    # pl.savefig("ind-results.png", dpi=150)
 
     ## Make the corner plot.
-    ##fig = triangle.corner(samples[:, 2:], truths=truth, labels=labels)
-    #fig = triangle.corner(samples[:, :], truths=truth, labels=labels)
-    #fig.savefig("ind-corner.png", dpi=150)
+    # fig = triangle.corner(samples[:, 2:], truths=truth, labels=labels)
+    # fig = triangle.corner(samples[:, :], truths=truth, labels=labels)
+    # fig.savefig("ind-corner.png", dpi=150)
 
     # Fit assuming GP.
     print("Fitting GP")
@@ -159,6 +167,7 @@ if __name__ == "__main__":
     pl.figure()
     pl.errorbar(t, y, yerr=yerr, fmt=".k", capsize=0)
     for s in samples[np.random.randint(len(samples), size=24)]:
+        # sampled parameters have to be exponentiated
         gp = george.GP(np.exp(s[0]) * kernels.Matern32Kernel(np.exp(s[1])))
         gp.compute(t, yerrtruth)
         m = gp.sample_conditional(y - model(s[2:], t), x) + model(s[2:], x)
@@ -173,7 +182,7 @@ if __name__ == "__main__":
     labels = [r"$\ln a^2$", r"$\ln \tau$", r"$\alpha$", r"$\ell$", r"$\sigma^2$"]
     #fig = triangle.corner(samples[:, 2:], truths=truth, labels=labels)
 
-    # follow the original script
+    # follow the original script to plot the hp in log space
     truth[0] = np.log(truth[0])
     truth[1] = np.log(truth[1])
 

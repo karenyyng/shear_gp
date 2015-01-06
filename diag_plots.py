@@ -251,38 +251,41 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
     with the top plot of each row showing a density plot in 1D
     and the remaining plots being 2D contour plots
 
-    :params df:
-        dataframe / dictionary / record array
-        that contain the data of all the variables to be plots
-    space = float, px of space that is added between subplots
-    var_list = list of strings - denotes the column header names
-        that needs to be plotted
-        or if df is not actually a df / dict, use a list of integers
-        instead
-    axlims = dictionary, keys are the strings in var_list,
-        each value is a tuple of (low_lim, up_lim) to denote the limit
-        of values to be plotted
-    truth = dictionary of floats, each correspond to a relevant entry in
-        the df / dict / record array with same dimension as var_list
-    Nbins_2D = dictionary, keys are in format of tuples of
-        (x_col_str, y_col_str) to denote which subplot you are referring to
-    axlabels = dictionary, keys correspond to the variable names
-    xlabel_to_rot = dictionary,
-        key is the the key for the labels to be rotated,
-        value is the degree to be rotated
-    histran = dictionary,
-        some keys has to be the ones for the plots, value are in
-        form of (lowerhist_range, upperhist_range)
-    figsize = integer, figuares are squared this refers to the side length
-    fontsize = integer, denotes font size of the labels
-    save = logical, denotes if plot should be saved or not
-    prefix = string, prefix of the output plot file
-    path = string, path of the output plot file
-    suffix = string, file extension of the output plot file
+    Parameters:
+    -----------
+        df: dataframe / dictionary / record array
+            that contain the data of all the variables to be plots
+        space = float, px of space that is added between subplots
+        var_list = list of strings - denotes the column header names
+            that needs to be plotted
+            or if df is not actually a df / dict, use a list of integers
+            instead
+        axlims = dictionary, keys are the strings in var_list,
+            each value is a tuple of (low_lim, up_lim) to denote the limit
+            of values to be plotted
+        truth = dictionary of floats, each correspond to a relevant entry in
+            the df / dict / record array with same dimension as var_list
+        Nbins_2D = dictionary, keys are in format of tuples of
+            (x_col_str, y_col_str) to denote which subplot you are referring to
+        axlabels = dictionary, keys correspond to the variable names
+        xlabel_to_rot = dictionary,
+            key is the the key for the labels to be rotated,
+            value is the degree to be rotated
+        histran = dictionary,
+            some keys has to be the ones for the plots, value are in
+            form of (lowerhist_range, upperhist_range)
+        figsize = integer, figuares are squared this refers to the side length
+        fontsize = integer, denotes font size of the labels
+        save = logical, denotes if plot should be saved or not
+        prefix = string, prefix of the output plot file
+        path = string, path of the output plot file
+        suffix = string, file extension of the output plot file
 
-    :return estimates:
-        dict of estimates, each list of estiamte is in the form of
-        [loc, ll_68, ul_68, ll_95, ul_95]
+    Returns:
+    -------
+        estimates: dict of estimates,
+            each list of estiamte is in the form of
+            [loc, ll_68, ul_68, ll_95, ul_95]
 
     stability: works but use at own risk
     """

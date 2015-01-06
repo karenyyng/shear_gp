@@ -25,7 +25,7 @@ def to_george_param(p):
 
 def from_george_param(p_ge):
     """gives lambDa and rho from the parameters of George"""
-    return [1. / p_ge[0], np.exp(-p_ge[1]/ 4.)]
+    return [1. / p_ge[0], np.exp(-p_ge[1] / 4.)]
 
 
 def char_dim(rho):
@@ -139,7 +139,12 @@ def invgamma_pdf(x, alpha, beta):
 # -------- helper functions for calling emcee ---------------
 
 def lnlike_gp(truth, coord, psi, psi_err):
-    hp = truth[:2]
+    """ we initialize the lnlike_gp to be the ln likelihood computed by
+    george given the data points """
+    # to be consistent with how we set up lnprior fnction with truth of hp
+    # being in the log scale, we have to exponentiate this
+    hp = np.exp(truth[:2])
+
     p = truth[2:]
     # update kernel parameters
     gp = george.GP(hp[0] * kernels.ExpSquaredKernel(hp[1], ndim=2.))
@@ -153,6 +158,7 @@ def lnlike_gp(truth, coord, psi, psi_err):
 
 
 def lnprior_gp(hp, prior_vals=None, verbose=False):
+
     if prior_vals is not None:
         prior_vals = np.array(prior_vals)
         assert prior_vals.shape[0] == len(hp), \
@@ -198,20 +204,30 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
            prior_vals=[[0., 2.], [0., 1]], burnin_chain_len=int(1e3),
            conver_chain_len=int(5e3), a=2.0, threads=None, pool=None):
     """
-    ..param::
-        initial = list / array of initial guesses of the truth value of the hp
-        data = tuple (t, y, yerr),
+    Parameters
+    ----------
+        initial : list / array
+            of initial guesses of the truth value of the hp
+        data : tuple (t, y, yerr),
             t = numpy array of coord grid,
             y = flattened (1D) numpy array of data,
             yerr = flattened (1D) numpy array of data err
-        nwalkers = integer, number of MCMC chains to use
-        guess_dev_frac = float, has to be > 0 and around 1,
+        nwalkers : integer,
+            number of MCMC chains to use
+        guess_dev_frac : float, has to be > 0 and around 1,
             initial values of each chain is
             (init_value * (1 + guess_dev_frac * rand_float)) where rand_float
             is drawn from a unit variance normal
-        a = float, proposal scale parameter, see GW 10 or the emcee paper at
+        a : float, proposal scale parameter, see GW 10 or the emcee paper at
             http://arxiv.org/abs/1202.3665, increase value to decrease
             acceptance_fraction and vice versa
+        pool : integer, number of pool processes to use for parallelization
+
+    Returns
+    ------
+        sampler : emcee sampler object
+        p0 : list of floats
+            parameter values
     """
     ndim = len(initial)
 
@@ -219,6 +235,8 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
     # are within the prior range
     count = 0
     p0 = draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers)
+
+    # make sure prior values are reasonable
     while(np.sum(map(lambda x: lnprior_gp(x, prior_vals=prior_vals), p0))):
         p0 = draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers)
         count += 1
@@ -229,7 +247,6 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
     map(lambda x: print("Initial guesses were {0}".format(x)), p0)
     # needs a check here to make sure that the initial guesses are not
     # outside the prior range
-
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a, args=data,
                                     kwargs={"prior_vals": prior_vals},
                                     threads=None, pool=None)
