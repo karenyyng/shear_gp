@@ -112,7 +112,7 @@ def normalize_data(psi):
     Not the best for data with outliers / heavy tails
     """
     psi = psi.copy()
-    return (psi - psi.ravel().min()) / (psi.ravel.max() - psi.ravel().min())
+    return (psi - psi.ravel().min()) / (psi.ravel().max() - psi.ravel().min())
 
 
 def invgamma_pdf(x, alpha, beta):
@@ -196,22 +196,22 @@ def draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers):
 
 def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
            prior_vals=[[0., 2.], [0., 1]], burnin_chain_len=int(1e3),
-           conver_chain_len=int(5e3), a=2.0):
+           conver_chain_len=int(5e3), a=2.0, threads=None, pool=None):
     """
-    :param
-    initial = list / array of initial guesses of the truth value of the hp
-    data = tuple (t, y, yerr),
-        t = numpy array of coord grid,
-        y = flattened (1D) numpy array of data,
-        yerr = flattened (1D) numpy array of data err
-    nwalkers = integer, number of MCMC chains to use
-    guess_dev_frac = float, has to be > 0 and around 1,
-        initial values of each chain is
-        (init_value * (1 + guess_dev_frac * rand_float)) where rand_float
-        is drawn from a unit variance normal
-    a = float, proposal scale parameter, see GW 10 or the emcee paper at
-        http://arxiv.org/abs/1202.3665, increase value to decrease
-        acceptance_fraction and vice versa
+    ..param::
+        initial = list / array of initial guesses of the truth value of the hp
+        data = tuple (t, y, yerr),
+            t = numpy array of coord grid,
+            y = flattened (1D) numpy array of data,
+            yerr = flattened (1D) numpy array of data err
+        nwalkers = integer, number of MCMC chains to use
+        guess_dev_frac = float, has to be > 0 and around 1,
+            initial values of each chain is
+            (init_value * (1 + guess_dev_frac * rand_float)) where rand_float
+            is drawn from a unit variance normal
+        a = float, proposal scale parameter, see GW 10 or the emcee paper at
+            http://arxiv.org/abs/1202.3665, increase value to decrease
+            acceptance_fraction and vice versa
     """
     ndim = len(initial)
 
@@ -231,7 +231,8 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
     # outside the prior range
 
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a, args=data,
-                                    kwargs={"prior_vals": prior_vals})
+                                    kwargs={"prior_vals": prior_vals},
+                                    threads=None, pool=None)
 
     print("Running burn-in with length {0:d}".format(burnin_chain_len))
     p0, lnp, _ = sampler.run_mcmc(p0, burnin_chain_len)

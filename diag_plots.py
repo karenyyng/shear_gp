@@ -1,12 +1,14 @@
 """contains code for all the diagnostic plots for shear_gp project
 """
-from __future__ import print_function
+from __future__ import print_function, division
 import numpy as np
 import matplotlib.pyplot as plt
 #from astrostats import biweightLoc, bcpcl
 from astroML import density_estimation as de
 from sample_and_fit_gp import char_dim
 import pandas as pd
+from scipy.special import erf
+from scipy.stats import norm
 
 
 def find_bin_ix(binedges, loc):
@@ -476,23 +478,23 @@ def bcpcl(T, T_p, N_sigma):
         "histogram values are > 1"
 
     # Number of bootstrap samples
-    m = numpy.size(T_p)
+    m = np.size(T_p)
     # Percentile confidence interval is defined as 100%(1-a), thus for 1sigma
     # a=0.32
-    a = 1 - erf(N_sigma / numpy.sqrt(2))
+    a = 1 - erf(N_sigma / np.sqrt(2))
     # order the bootstrap sample values smallest to largest
-    index = numpy.argsort(T_p)
+    index = np.argsort(T_p)
     T_p = T_p[index]
     # Calculate the bias correction term
     mask = T_p < T
-    z_0 = norm.ppf(numpy.sum(mask) / m)
+    z_0 = norm.ppf(np.sum(mask) / m)
     # Calculate the a1 and a2 values
     a1 = norm.cdf(2 * z_0 + norm.ppf(a / 2))
     a2 = norm.cdf(2 * z_0 + norm.ppf(1 - a / 2))
     # Calculate the lower and upper indicies of lower and upper confidence
     # intervals
-    id_L = numpy.int(m * a1) - 1
-    id_U = numpy.int(m * a2)
+    id_L = np.int(m * a1) - 1
+    id_U = np.int(m * a2)
     # Find the lower an upper confidence values
     T_L = T_p[id_L]
     T_U = T_p[id_U]
@@ -503,14 +505,14 @@ def biweightLoc(z, c=6):
     '''Biweight statistic Location (similar to the mean) eqn 5
     Author: W. A. Dawson
     '''
-    M = numpy.median(z)
-    MAD = numpy.median(numpy.abs(z - M))
+    M = np.median(z)
+    MAD = np.median(np.abs(z - M))
     if MAD == 0:
         raise ZeroDivisionError
     u = (z - M) / (c * MAD)
-    mask_u = numpy.abs(u) < 1
+    mask_u = np.abs(u) < 1
     z = z[mask_u]
     u = u[mask_u]
-    Cbi = M + numpy.inner(z - M, (1 - u ** 2) ** 2) / \
-        numpy.sum((1 - u ** 2) ** 2)
+    Cbi = M + np.inner(z - M, (1 - u ** 2) ** 2) / \
+        np.sum((1 - u ** 2) ** 2)
     return Cbi
