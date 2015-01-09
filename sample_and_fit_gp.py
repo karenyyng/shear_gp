@@ -140,13 +140,33 @@ def invgamma_pdf(x, alpha, beta):
 
 def lnlike_gp(truth, coord, psi, psi_err):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
-    george given the data points """
+    george given the data points
+
+    Parameters:
+    -----------
+        truth : list of floats
+            expect a format of [ln_hp1, ln_hp2, p1, p2, ..., pn]
+            where the first two hyperparameters for the kernel function for
+            George are in log scale
+        coord : 2D numpy array
+            each row consists of the 2 coordinates of a grid point
+        psi : numpy array
+            this is in 1D after using the ravel() function for the 2D values
+        psi_err : numpy array
+            same shape and size as psi but for the errors
+
+    Returns:
+    -------
+        likelihood value : float
+
+    """
     # to be consistent with how we set up lnprior fnction with truth of hp
     # being in the log scale, we have to exponentiate this
     hp = np.exp(truth[:2])
 
     p = truth[2:]
     # update kernel parameters
+
     gp = george.GP(hp[0] * kernels.ExpSquaredKernel(hp[1], ndim=2.))
 
     # this step is very revealing that we are fitting the psi_err
@@ -157,26 +177,43 @@ def lnlike_gp(truth, coord, psi, psi_err):
     return gp.lnlikelihood(psi - model(p, coord))
 
 
-def lnprior_gp(hp, prior_vals=None, verbose=False):
+def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
+    """ function for the george lnprior
 
-    if prior_vals is not None:
-        prior_vals = np.array(prior_vals)
-        assert prior_vals.shape[0] == len(hp), \
-            "wrong # of rows in prior_vals {0}".format(prior_vals.shape[0]) + \
-            " that do not match no of params {0}".format(len(hp))
-        assert prior_vals.shape[1] == 2, \
-            "wrong # of cols in prior_vals {0}".format(prior_vals.shape[2])
+    Parameters :
+    ----------
+        ln_hp : list of two floats
+            these are the hyperparameters for the kernel function
+            theta1 and theta2, these are in log space
+        lnprior_vals : list of list of prior values
+            e.g. [[ln_prior_low_lim1, ln_prior_up_lim1],
+                  [ln_prior_low_lim2, ln_prior_up_lim2],
+                    ... ]
+
+    Returns :
+    --------
+        float : prior value
+
+    """
+
+    if lnprior_vals is not None:
+        lnprior_vals = np.array(lnprior_vals)
+        assert lnprior_vals.shape[0] == len(ln_hp), \
+            "wrong # of rows in lnprior_vals {0}".format(lnprior_vals.shape[0]) + \
+            " that do not match no of params {0}".format(len(ln_hp))
+        assert lnprior_vals.shape[1] == 2, \
+            "wrong # of cols in lnprior_vals {0}".format(lnprior_vals.shape[2])
     else:
-        prior_vals = [[-1, 2.], [0., 1.0]]
+        lnprior_vals = [[-1, 2.], [0., 1.0]]
         if verbose:
             print("No prior vals given, setting them to " +
-                  "{0}".format(prior_vals))
+                  "{0}".format(lnprior_vals))
 
     # uniform in the log spacing - i didn't initialize this correctly before
-    lna, lntau = hp[:2]
-    if not prior_vals[0][0] < lna < prior_vals[0][1]:
+    lna, lntau = ln_hp[:2]
+    if not lnprior_vals[0][0] < lna < lnprior_vals[0][1]:
         return -np.inf
-    if not prior_vals[1][0] < lntau < prior_vals[1][1]:
+    if not lnprior_vals[1][0] < lntau < lnprior_vals[1][1]:
         return -np.inf
 
     # not exactly right, should also add the lnprior_base terms
@@ -184,14 +221,21 @@ def lnprior_gp(hp, prior_vals=None, verbose=False):
     return 0.0
 
 
-def lnprob_gp(truth, coords, psi, psi_err, prior_vals=[[-1, 1], [-1, 0]]):
-    hp = truth[:2]
-    #p = truth[2:]
-    lp = lnprior_gp(hp, prior_vals=prior_vals)
+def lnprob_gp(lnHP_truth, coords, psi, psi_err,
+              lnprior_vals=[[-1, 1], [-1, 0]]):
+    """the log posterior prob that emcee is going to evaluate
+
+    Params:
+    -------
+        lnHP_truth
+    """
+    ln_hp = lnHP_truth[:2]
+    # p = truth[2:]
+    lp = lnprior_gp(ln_hp, lnprior_vals=lnprior_vals)
 
     if not np.isfinite(lp):
         return -np.inf
-    return lp + lnlike_gp(truth, coords, psi, psi_err)
+    return lp + lnlike_gp(lnHP_truth, coords, psi, psi_err)
 
 
 def draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers):
@@ -200,8 +244,8 @@ def draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers):
             for i in xrange(nwalkers)]
 
 
-def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
-           prior_vals=[[0., 2.], [0., 1]], burnin_chain_len=int(1e3),
+def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-6,
+           lnprior_vals=[[0., 2.], [0., 1]], burnin_chain_len=int(1e3),
            conver_chain_len=int(5e3), a=2.0, threads=None, pool=None):
     """
     Parameters
@@ -209,7 +253,7 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
         initial : list / array
             of initial guesses of the truth value of the hp
         data : tuple (t, y, yerr),
-            t = numpy array of coord grid,
+            t : numpy array of coord grid,
             y = flattened (1D) numpy array of data,
             yerr = flattened (1D) numpy array of data err
         nwalkers : integer,
@@ -237,18 +281,18 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-2,
     p0 = draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers)
 
     # make sure prior values are reasonable
-    while(np.sum(map(lambda x: lnprior_gp(x, prior_vals=prior_vals), p0))):
+    while(np.sum(map(lambda x: lnprior_gp(x, lnprior_vals=lnprior_vals), p0))):
         p0 = draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers)
         count += 1
         if count > 1e3:
             raise ValueError("Cannot initialize reasonable chain values " +
                              "within prior range")
 
-    map(lambda x: print("Initial guesses were {0}".format(x)), p0)
+    map(lambda x: print("Initial guesses were {0}".format(np.exp(x))), p0)
     # needs a check here to make sure that the initial guesses are not
     # outside the prior range
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a, args=data,
-                                    kwargs={"prior_vals": prior_vals},
+                                    kwargs={"lnprior_vals": lnprior_vals},
                                     threads=None, pool=None)
 
     print("Running burn-in with length {0:d}".format(burnin_chain_len))

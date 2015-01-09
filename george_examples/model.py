@@ -5,6 +5,7 @@ Code for this script is originally at:
 https://github.com/dfm/george/blob/master/docs/_code/model.py
 """
 
+
 from __future__ import division, print_function
 
 import emcee
@@ -157,6 +158,7 @@ if __name__ == "__main__":
     # Fit assuming GP.
     print("Fitting GP")
     data = (t, y, yerr)
+    # truth is originally set to be [0.0, 0.0] by dfm, in log scale
     truth_gp = truth + 1e-8 * np.random.randn(len(truth))  # [0.0, 0.0] + truth[2:]
     sampler = fit_gp(truth_gp, data)
 
