@@ -98,35 +98,44 @@ def model(p, coords):
     return 0  #p[0] * np.ones(coords.shape[0])
 
 
-def standardize_data(psi):
+def standardize_data(coords):
     """ scales data to have mean zero and std. dev. of 1 ....
     Not the best for data with outliers / heavy tails
 
     """
-    psi = psi.copy()
-    return (psi - np.mean(psi.ravel())) / np.std(psi.ravel())
+    #psi = psi.copy()
+    #return (psi - np.mean(psi.ravel())) / np.std(psi.ravel())
+    return
 
 
-def normalize_data(psi):
-    """scale data between the range of [0, 1] and returns a copy of the data
-    Not the best for data with outliers / heavy tails
+def normalize_data(coords):
+    """scale data coords between the range of [0, 1] and returns a copy of the
+    data
     """
-    psi = psi.copy()
-    return (psi - psi.ravel().min()) / (psi.ravel().max() - psi.ravel().min())
+    #psi = psi.copy()
+    #return (psi - psi.ravel().min()) / (psi.ravel().max() - psi.ravel().min())
+    return
 
 
 def invgamma_pdf(x, alpha, beta):
     """pdf of inv gamma dist. with wiki parametrization
+    Suggested usage:
+    ----------------
+        prior of the inverse precision param
 
     Params:
+    ------
         x (float / np.array): value to evalute at
         alpha (float): scale parameter, real number > 0
         beta (float): shape parameter, real number > 0
 
     Returns:
+    -------
         float / an array of floats
 
-    Stability: passed one test
+    Stability:
+    ---------
+        passed one test
 
     .. math::
         f(x) = \frac{\beta^\alpha}{\Gamma(\alpha)}
@@ -136,9 +145,17 @@ def invgamma_pdf(x, alpha, beta):
                x ** (-alpha - 1.) * np.exp(-beta / x)
 
 
+def beta_pdf():
+    """
+    work in progress
+    """
+    return
+
+
+
 # -------- helper functions for calling emcee ---------------
 
-def lnlike_gp(truth, coord, psi, psi_err):
+def lnlike_gp(truth, coord, psi, psi_err=1e-10):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
     george given the data points
 
@@ -173,6 +190,8 @@ def lnlike_gp(truth, coord, psi, psi_err):
     # when we try to find the hyperparameters
     # psi_err is going to be added to the covariance matrix of the kernel
     # by george
+    if len(psi_err) == 1:
+        psi_err = psi_err * np.ones(len(coord))
     gp.compute(coord, psi_err)
     return gp.lnlikelihood(psi - model(p, coord))
 
@@ -204,7 +223,7 @@ def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
         assert lnprior_vals.shape[1] == 2, \
             "wrong # of cols in lnprior_vals {0}".format(lnprior_vals.shape[2])
     else:
-        lnprior_vals = [[-1, 2.], [0., 1.0]]
+        lnprior_vals = [[-10, 10.], [-10., 10]]
         if verbose:
             print("No prior vals given, setting them to " +
                   "{0}".format(lnprior_vals))
@@ -221,8 +240,8 @@ def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
     return 0.0
 
 
-def lnprob_gp(lnHP_truth, coords, psi, psi_err,
-              lnprior_vals=[[-1, 1], [-1, 0]]):
+def lnprob_gp(lnHP_truth, coords, psi, psi_err=1e-10,
+              lnprior_vals=[[-10, 10], [-10, 10]]):
     """the log posterior prob that emcee is going to evaluate
 
     Params:
@@ -245,13 +264,13 @@ def draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers):
 
 
 def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-6,
-           lnprior_vals=[[0., 2.], [0., 1]], burnin_chain_len=int(1e3),
-           conver_chain_len=int(5e3), a=2.0, threads=None, pool=None):
+           lnprior_vals=[[-10., 10.], [-10., 10]], burnin_chain_len=int(1e3),
+           conver_chain_len=int(5e3), a=2.0, threads=1, pool=None):
     """
     Parameters
     ----------
         initial : list / array
-            of initial guesses of the truth value of the hp
+            of initial guesses of the truth value of the **log** of hp
         data : tuple (t, y, yerr),
             t : numpy array of coord grid,
             y = flattened (1D) numpy array of data,
@@ -265,7 +284,9 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-6,
         a : float, proposal scale parameter, see GW 10 or the emcee paper at
             http://arxiv.org/abs/1202.3665, increase value to decrease
             acceptance_fraction and vice versa
+        threads : integer, number of threads to use for parallelization
         pool : integer, number of pool processes to use for parallelization
+        sampler : allow the use of
 
     Returns
     ------
@@ -293,7 +314,7 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-6,
     # outside the prior range
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a, args=data,
                                     kwargs={"lnprior_vals": lnprior_vals},
-                                    threads=None, pool=None)
+                                    threads=threads, pool=pool)
 
     print("Running burn-in with length {0:d}".format(burnin_chain_len))
     p0, lnp, _ = sampler.run_mcmc(p0, burnin_chain_len)
