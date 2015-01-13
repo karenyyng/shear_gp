@@ -282,7 +282,7 @@ Since we are working in projected (2D) space, D is a 2 $\times$ 2 matrix.
 More explicitly, I will use i,j,h,k as subscripts for the spatial
 dimensions and m, n for the observation number in the GP model:
 \begin{align*}
-r^2_{mn} & = (x_{m1} - y_{m1}, x_{n2} - y_{n2})
+r^2_{mn} & = (x_{m1} - y_{n1}, x_{m2} - y_{n2})
 \left(
 \begin{array}{cc}
 D_{11} & D_{12} \\ D_{21} & D_{22} 
