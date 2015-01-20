@@ -1,4 +1,4 @@
-"""
+r"""
 all functions as wrapper around George for our kernel derivatives
 
 see: https://github.com/karenyyng/shear_gp/blob/master/notes/ker_deriv.pdf
@@ -117,11 +117,16 @@ class kappaExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
     :params coords:
 
     .. math::
+        eqn (2) from kern_deriv.pdf
 
     """
     def __init__(self, metric, ndim=2, dim=-1, extra=[]):
         super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
                                                dim=-dim, extra=[])
+        self.ix_list = [[1, 1, 1, 1],
+                        [1, 1, 2, 2],
+                        [2, 2, 1, 1],
+                        [2, 2, 2, 2]]
 
     ## there should be a method here that grabs the kernel and multiply it with
     ## suitable coefficients
@@ -137,8 +142,15 @@ class gamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
 
     :params coords:
     """
-    def __init__(self, coords):
-        return
+    def __init__(self, metric, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                               dim=-dim, extra=[])
+
+        # have to think about how to account for the negative sign in eqn (3)
+        self.ix_list = [[1, 1, 1, 1],
+                        [1, 1, 2, 2],
+                        [2, 2, 1, 1],
+                        [2, 2, 2, 2]]
 
 
 class gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
@@ -146,9 +158,13 @@ class gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
     inherits from the ExpSquareKernel class and multiplies it with appropriate
     coefficients
 
-    :params pars:
+    :params metric: a list of 2 integers
     """
-    def __init__(self, coords):
-        return
+    def __init__(self, metric, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                               dim=-dim, extra=[])
 
-    return
+        self.ix_list = [[1, 2, 1, 2],
+                        [1, 2, 2, 1],
+                        [2, 1, 1, 2],
+                        [2, 1, 2, 1]]

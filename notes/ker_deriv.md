@@ -264,6 +264,24 @@ And,
 \right)
 \end{align}
 
+\begin{align}
+{\rm Cov}(\kappa(\vec{x}), \gamma_1(\vec{y})) &= \frac{1}{4}\left(
+\Sigma_{,1111} + \Sigma_{,2211} - \Sigma_{,1122} - \Sigma_{,2222}
+\right)
+\end{align}
+
+\begin{align}
+{\rm Cov}(\kappa(\vec{x}), \gamma_2(\vec{y})) &= \frac{1}{4}\left(
+\Sigma_{,1112} + \Sigma_{,2212} + \Sigma_{,1121} + \Sigma_{,2221}
+\right)
+\end{align}
+
+\begin{align}
+{\rm Cov}(\gamma_1(\vec{x}), \gamma_2(\vec{y})) &= \frac{1}{4}\left(
+\Sigma_{,1112} + \Sigma_{,1121} - \Sigma_{,2212} - \Sigma_{,2221}
+\right)
+\end{align}
+
 # The squared exponential covariance function 
 \begin{align}
 \Sigma(r^2; \lambda, \rho) = \lambda^{-1} \exp\left( -
