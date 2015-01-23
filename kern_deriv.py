@@ -109,7 +109,8 @@ class kernelDerivatives():
         return metric[ix[2]] * metric[ix[0]]
 
 
-class kappaExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
+class kappaKappaExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+                                RadialKernel):
     r"""
     inherits from the ExpSquareKernel class and multiplies it with appropriate
     coefficients
@@ -135,7 +136,8 @@ class kappaExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
     return
 
 
-class gamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
+class gamma1Gamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+                                  RadialKernel):
     r"""
     inherits from the ExpSquareKernel class and multiplies it with appropriate
     coefficients
@@ -153,7 +155,8 @@ class gamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
                         [2, 2, 2, 2]]
 
 
-class gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
+class gamma2Gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+                                  RadialKernel):
     r"""
     inherits from the ExpSquareKernel class and multiplies it with appropriate
     coefficients
@@ -168,3 +171,66 @@ class gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel, RadialKernel):
                         [1, 2, 2, 1],
                         [2, 1, 1, 2],
                         [2, 1, 2, 1]]
+
+
+class kappaGamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+                                 RadialKernel):
+    r"""
+    inherits from the ExpSquareKernel class and multiplies it with appropriate
+    coefficients
+
+    :params coords:
+
+    .. math::
+        eqn (5) from kern_deriv.pdf
+
+    """
+    def __init__(self, metric, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                               dim=-dim, extra=[])
+        self.ix_list = [[1, 1, 1, 1],
+                        [1, 1, 2, 2],
+                        [2, 2, 1, 1],  # negative
+                        [2, 2, 2, 2]]  # negative
+
+
+class kappaGamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+                                 RadialKernel):
+    r"""
+    inherits from the ExpSquareKernel class and multiplies it with appropriate
+    coefficients
+
+    :params coords:
+
+    .. math::
+        eqn (6) from kern_deriv.pdf
+
+    """
+    def __init__(self, metric, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                               dim=-dim, extra=[])
+        self.ix_list = [[1, 1, 1, 2],
+                        [1, 1, 2, 1],
+                        [2, 2, 1, 2],
+                        [2, 2, 2, 1]]
+
+
+class Gamma1Gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+                                  RadialKernel)
+    r"""
+    inherits from the ExpSquareKernel class and multiplies it with appropriate
+    coefficients
+
+    :params coords:
+
+    .. math::
+        eqn (6) from kern_deriv.pdf
+
+    """
+    def __init__(self, metric, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                               dim=-dim, extra=[])
+        self.ix_list = [[1, 1, 1, 2],
+                        [1, 1, 2, 1],
+                        [2, 2, 1, 2],  # negative
+                        [2, 2, 2, 1]]  # negative
