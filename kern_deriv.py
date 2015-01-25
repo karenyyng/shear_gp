@@ -9,10 +9,11 @@ for how the kernels are implemented in george
 
 stability : untested
 """
-from george.kernels import ExpSquaredKernel, RadialKernel
+from george.kernels import ExpSquaredKernel, RadialKernel, Kernel
+import numpy as np
 
 
-class kernelDerivatives():
+class KernelDerivatives:
     def indices_sanity_check(self, ix):
         assert ix == 0 or ix == 1, \
             "index has to be either 0 or 1"
@@ -109,8 +110,7 @@ class kernelDerivatives():
         return metric[ix[2]] * metric[ix[0]]
 
 
-class kappaKappaExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
-                                RadialKernel):
+class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel, Kernel):
     r"""
     inherits from the ExpSquareKernel class and multiplies it with appropriate
     coefficients
@@ -131,12 +131,14 @@ class kappaKappaExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
-        #self.__term__ =
-        ## there should be a method here that grabs the kernel and multiply it with
-        ## suitable coefficients
+
+    def value(self, x1, x2=None):
+        """ the child class' s method overrides the parent class 's method
+        to multiple our kernel with appropriate coefficients """
+        return super(KappaKappaExpSquareKernel, self).value(x1, x2) * 200
 
 
-class gamma1Gamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+class Gamma1Gamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel,
                                   RadialKernel):
     r"""
     inherits from the ExpSquareKernel class and multiplies it with appropriate
@@ -157,7 +159,7 @@ class gamma1Gamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
         self.__terms_signs__ = [1, 1, 1, 1]
 
 
-class gamma2Gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel,
                                   RadialKernel):
     r"""inherits from the ExpSquareKernel class and multiplies it with
     appropriate coefficients
@@ -176,17 +178,13 @@ class gamma2Gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
         self.__terms_signs__ = [1, 1, 1, 1]
 
 
-class kappaGamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+class KappaGamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel,
                                  RadialKernel):
-    r"""
-    inherits from the ExpSquareKernel class and multiplies it with appropriate
-    coefficients
-
+    r""" inherits from the ExpSquareKernel class and multiplies it with
+    appropriate coefficients
     :params coords:
 
-    .. math::
-        eqn (5) from kern_deriv.pdf
-
+    .. math:: eqn (5) from kern_deriv.pdf
     """
     def __init__(self, metric, ndim=2, dim=-1, extra=[]):
         super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
@@ -199,7 +197,7 @@ class kappaGamma1ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
         self.__terms_signs__ = [1, 1, -1, -1]
 
 
-class kappaGamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+class KappaGamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel,
                                  RadialKernel):
     r"""
     inherits from the ExpSquareKernel class and multiplies it with appropriate
@@ -222,7 +220,7 @@ class kappaGamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
         self.__terms_signs__ = [1, 1, 1, 1]
 
 
-class Gamma1Gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
+class Gamma1Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel,
                                   RadialKernel):
     r"""inherits from the ExpSquareKernel class and multiplies it with
     appropriate coefficients
@@ -242,3 +240,4 @@ class Gamma1Gamma2ExpSquareKernel(kernelDerivatives, ExpSquaredKernel,
                             [2, 2, 2, 1]]  # negative
 
         self.__terms_signs__ = [1, 1, -1, -1]
+        :w
