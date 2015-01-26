@@ -19,10 +19,6 @@ import numpy as np
 
 
 class KernelDerivatives:
-    #def indices_sanity_check(self, ix):
-    #    assert ix == 0 or ix == 1, \
-    #        "index has to be either 0 or 1"
-    #    return
     def __init__(self):
         # pick 2 pairs from 4 objects so we have 4C2 combinations
         self.__pairsOfBIndices__ = \
@@ -35,6 +31,10 @@ class KernelDerivatives:
         self.__pairsOfCIndices__ = \
             [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2]]
 
+    # def indices_sanity_check(self, ix):
+    #     assert ix == 0 or ix == 1, \
+    #         "index has to be either 0 or 1"
+    #     return
     def X(self, coords, m, n, spat_ix):
         return coords[m, spat_ix] - coords[n, spat_ix]
 
@@ -118,29 +118,27 @@ class KernelDerivatives:
 
         return metric[ix[2]] * metric[ix[0]]
 
-    def Sigma4thDeriv(self, ix, m, n):
+    def __Sigma4thDeriv__(self, coords, ix, m, n, metric):
         r"""gather the 10 terms for the 4th derivative of each Sigma
         given the ix for each the derivatives are taken w.r.t.
         """
         beta = self._par[0]
 
         allTermBs = 0
-        combBix = [ix[i] for i in self.__pairsOfBIndices__[j]
-                   for j in range(6)]
+        combBix = \
+            [ix[i] for i in self.__pairsOfBIndices__[k] for k in range(6)]
         for i in range(6):
-            allTermBs += self.termB(self.__coords__, combBix[i], m, n,
-                                    self._metric)
+            allTermBs += self.termB(coords, combBix[i], m, n, metric)
 
         allTermCs = 0
-        combCix = [ix[i] for i in self.__pairsOfCIndices__[j]
-                   for j in range(3)]
+        combCix = \
+            [ix[i] for i in self.__pairsOfCIndices__[j] for j in range(3)]
         for i in range(3):
-            allTermCs += self.termC(self.__coords__, combCix[i], m, n,
-                                    self._metric)
+            allTermCs += self.termC(coords, combCix[i], m, n, metric)
 
-        return beta ** 4 * termA(self.__coords__, ix, m, n, self.__metric) + \
-                beta ** 3 *  allTermBs + \
-                beta ** 2 * allTermCs
+        return beta ** 4 * termA(coords, ix, m, n, metric) + \
+               beta ** 3 * allTermBs + \
+               beta ** 2 * allTermCs
 
 
 class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
@@ -148,7 +146,6 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     inherits from the ExpSquareKernel class and multiplies it with appropriate
     coefficients
 
-    :params metric: list of floats
     :params coords: 2D numpy array
         with shape = (n_obs, 2)
 
@@ -166,6 +163,9 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__coords__ = coords
 
+        if type(metric) == float or type(metric) == int:
+            self.__metric__ = metric * np.ones(ndim)
+
         # python indices are zeroth indexed
         self.__ix_list__ = np.array([[1, 1, 1, 1],
                                      [1, 1, 2, 2],
@@ -174,6 +174,14 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
+    def __compute_Sigma4derv__(self):
+        """ compute the coefficients due to the derivatives - this
+        should result in a symmetric N x N matrix where N is the
+        number of observations
+        """
+        print self.__Sigma4thDeriv__(self.__coords__, self.__ix_list__[0],
+                                     1, 1, self.__metric__)
+        return
 
     def value(self, x1, x2=None):
         """ the child class's method overrides the parent class's method
@@ -184,6 +192,7 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         """ for debugging purpose this calls the original values
         for the computed matrix """
         return super(KappaKappaExpSquareKernel, self).value(x1, x2)
+
 
 
 class Gamma1Gamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
@@ -206,8 +215,7 @@ class Gamma1Gamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         self.__terms_signs__ = [1, 1, 1, 1]
 
 
-class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel,
-                                  RadialKernel):
+class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     r"""inherits from the ExpSquareKernel class and multiplies it with
     appropriate coefficients
 
