@@ -474,13 +474,16 @@ k_{,y_h y_k} r^2_{,x_i x_j}
 \end{align*}
 
 ## Collect terms of $\Sigma_{,x_i x_j y_h y_k}$ by plugging them in eqn 20 
-All the relevant terms are boxed above, note that we have to figure out the
-signs for the permutation terms 
+All the relevant terms are boxed above, 
 \begin{align}
 \Sigma_{,x_i x_j y_h y_k} &= (\beta^4 X_h X_j X_k X_i -  
 \beta^3 (X_j X_i D_{hk} \delta_{hk} + 5 {\rm perm.}) + \beta^2
 (D_{jh} D_{ik}\delta_{jh}\delta_{ik} + 2 {\rm perm.})) \Sigma 
 \end{align}
+
+Note that when we evaluate the terms in the parenthesis, they come out to be a
+$n \times n$ matrix, and we should multiply those terms to $\Sigma$ using a
+[Schur product](http://en.wikipedia.org/wiki/Hadamard_product_(matrices))
 
 ## notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated

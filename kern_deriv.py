@@ -14,7 +14,7 @@ in my notes, `y` refers to an alternative way of calling the spatial location
 of the data points, and `psi` refers to the variable to be predicted
 
 """
-from george.kernels import ExpSquaredKernel, RadialKernel, Kernel
+from george.kernels import ExpSquaredKernel, RadialKernel  #, Kernel
 import numpy as np
 
 
@@ -31,14 +31,10 @@ class KernelDerivatives:
         self.__pairsOfCIndices__ = \
             [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2]]
 
-    # def indices_sanity_check(self, ix):
-    #     assert ix == 0 or ix == 1, \
-    #         "index has to be either 0 or 1"
-    #     return
-    def X(self, coords, m, n, spat_ix):
+    def __X__(self, coords, m, n, spat_ix):
         return coords[m, spat_ix] - coords[n, spat_ix]
 
-    def termA(self, coords, ix, m, n):
+    def __termA__(self, coords, ix, m, n):
         r""" term 1 in equation (24) without leading factors of $\beta^4$
 
         :params coords: numpy array,
@@ -55,12 +51,13 @@ class KernelDerivatives:
 
         """
         term = 1
+        print "ix in termA is ", ix
         for i in ix:
-            term *= self.X(coords, m, n, i)
+            term *= self.__X__(coords, m, n, i)
 
         return term
 
-    def termB(self, coords, ix, m, n, metric):
+    def __termB__(self, coords, ix, m, n, metric):
         r""" term 2 in equation (24) without leading factors of $\beta^3$
 
         :param coords: numpy array,
@@ -85,10 +82,11 @@ class KernelDerivatives:
         if ix[2] != ix[3]:
             return 0
 
-        return self.X(coords, m, n, ix[0]) * self.X(coords, m, n, ix[1]) * \
+        return self.__X__(coords, m, n, ix[0]) * \
+            self.__X__(coords, m, n, ix[1]) * \
             metric[ix[2]]
 
-    def termC(self, coords, ix, m, n, metric):
+    def __termC__(self, coords, ix, m, n, metric):
         r""" term 3 in equation (24) without leading factor of $\beta^2$
 
         :param coords: numpy array,
@@ -118,27 +116,48 @@ class KernelDerivatives:
 
         return metric[ix[2]] * metric[ix[0]]
 
-    def __Sigma4thDeriv__(self, coords, ix, m, n, metric):
+    def __Sigma4thDeriv__(self, corr, coords, ix, m, n, metric, debug=False):
         r"""gather the 10 terms for the 4th derivative of each Sigma
         given the ix for each the derivatives are taken w.r.t.
+
+        :params corr: float
+            value of the correlation parameter in the ExpSquaredKernel
+
+        :params coords: 2D numpy array
+            with shape (nObs, ndim)
+
+        :params ix: list of 4 integers
+
         """
-        beta = self._par[0]
+        debug = True
+
+        beta = corr
 
         allTermBs = 0
         combBix = \
-            [ix[i] for i in self.__pairsOfBIndices__[k] for k in range(6)]
+            [[ix[i] for i in self.__pairsOfBIndices__[j]] for j in range(6)]
+
         for i in range(6):
-            allTermBs += self.termB(coords, combBix[i], m, n, metric)
+            allTermBs += self.__termB__(coords, combBix[i], m, n, metric)
 
         allTermCs = 0
         combCix = \
-            [ix[i] for i in self.__pairsOfCIndices__[j] for j in range(3)]
-        for i in range(3):
-            allTermCs += self.termC(coords, combCix[i], m, n, metric)
+            [[ix[i] for i in self.__pairsOfCIndices__[j]] for j in range(3)]
 
-        return beta ** 4 * termA(coords, ix, m, n, metric) + \
+        for i in range(3):
+            allTermCs += self.__termC__(coords, combCix[i], m, n, metric)
+
+        termA = self.__termA__(coords, ix, m, n)
+
+        if debug:
+            print "combBix is ", combBix
+            print "combCix is ", combCix
+            print "terms are {0}, {1}, {2}".format(termA, allTermBs, allTermCs)
+
+        return beta ** 4 * termA + \
                beta ** 3 * allTermBs + \
                beta ** 2 * allTermCs
+
 
 
 class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
@@ -156,6 +175,9 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
         super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
                                                dim=-dim, extra=[])
+
+        # this should call KernelDerivatives.__init__()
+        super(KappaKappaExpSquareKernel, self).__init__()
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -179,20 +201,25 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         should result in a symmetric N x N matrix where N is the
         number of observations
         """
+
+        ## loops through self.__ix_list__ * self.__signs__ appropriately
         print self.__Sigma4thDeriv__(self.__coords__, self.__ix_list__[0],
                                      1, 1, self.__metric__)
         return
 
     def value(self, x1, x2=None):
-        """ the child class's method overrides the parent class's method
-        to multiple our kernel with appropriate coefficients """
+        """
+        the child class's method overrides the parent class's method
+        to multiple our kernel with appropriate coefficients
+
+        computes the
+        """
         return super(KappaKappaExpSquareKernel, self).value(x1, x2) * 200
 
     def debug_value(self, x1, x2=None):
         """ for debugging purpose this calls the original values
         for the computed matrix """
         return super(KappaKappaExpSquareKernel, self).value(x1, x2)
-
 
 
 class Gamma1Gamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
