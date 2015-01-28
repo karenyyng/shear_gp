@@ -7,11 +7,11 @@ for the exact mathematical expressions
 Read https://github.com/dfm/george/blob/master/george/kernels.py
 for how the kernels are implemented in george
 
-stability : untested
+:stability: untested
 
-warning : in George, `y` refers to the variable to be predicted
-in my notes, `y` refers to an alternative way of calling the spatial location
-of the data points, and `psi` refers to the variable to be predicted
+:warning: in George, `y` refers to the variable to be predicted
+    in my notes, `y` refers to an alternative way of calling the spatial location
+    of the data points, and `psi` refers to the variable to be predicted
 
 """
 from __future__ import division
@@ -107,6 +107,7 @@ class KernelDerivatives:
                beta ** 3 * allTermBs + \
                beta ** 2 * allTermCs
 
+
 class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     """
     inherits from the ExpSquareKernel class and multiplies it with appropriate
@@ -156,6 +157,7 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
                          for n in range(x.shape[0])
                          ])
 
+
     def value(self, x1, x2=None):
         """
         the child class's method overrides the parent class's method
@@ -170,8 +172,8 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         """
         # use parent class value method to parse values
         x1 = super(ExpSquaredKernel, self).value(x1, x2)
-        print "ndim of x1 is {0}".format(np.ndim(x1))
-        print "x1 is {0}".format(x1)
+        #print "ndim of x1 is {0}".format(np.ndim(x1))
+        #print "x1 is {0}".format(x1)
 
         mat = np.zeros((x1.shape[0], x1.shape[0]))
         for i in range(len(self.__ix_list__)):
