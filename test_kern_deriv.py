@@ -40,7 +40,7 @@ def plotKKCov(grid_extent=2, spacing=0.05):
     plt.imshow(KKCov, origin='upper', extent=[0, grid_extent, grid_extent, 0],
                vmin=0, vmax=1)
     plt.xticks(rotation=45)
-    #plt.yticks(np.arange(0, 1, 0.05))
+    # plt.yticks(np.arange(0, 1, 0.05))
     plt.title(
         r'$Cov(\kappa, \kappa)$ as 4th deriv of ExpSq kernel on square grid' +
         ' of spacing {0}'.format(spacing))
