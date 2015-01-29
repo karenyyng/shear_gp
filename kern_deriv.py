@@ -12,14 +12,16 @@ for how the kernels are implemented in george
 :warning: in George, `y` refers to the variable to be predicted
     in my notes, `y` refers to an alternative way of calling the spatial location
     of the data points, and `psi` refers to the variable to be predicted
-
 '''
 from __future__ import division
 from george.kernels import ExpSquaredKernel  # , RadialKernel  # , Kernel
 import numpy as np
 
 
-class KernelDerivatives:
+class KernelDerivatives(ExpSquaredKernel):
+    ''' this is intended to be a `virtual` class and not to meant to be
+    instantiated directly
+    '''
     def __init__(self):
         # pick 2 pairs from 4 objects so we have 4C2 combinations
         self.__pairsOfBIndices__ = \
@@ -119,12 +121,36 @@ class KernelDerivatives:
         :params ix: list of 4 integers to indicate derivative subscripts
         '''
 
-        return np.array([[self.__Sigma4thDeriv__(par, x,
-                                                 ix,
-                                                 m, n, metric)
+        return np.array([[self.__Sigma4thDeriv__(par, x, ix, m, n, metric)
                          for m in range(x.shape[0])]
                          for n in range(x.shape[0])
                          ])
+
+    def value(self, x1, ix_list, pars, terms_signs, metric, x2=None):
+        '''
+        the child class's method overrides the parent class's method
+        to multiple our kernel with appropriate coefficients
+
+        computes the expression in eqn. (2)
+
+        :note:
+            not sure what x2 is for, my guess is that x1 is the training
+            data, x2 is the test data according to `gp.predict`
+
+        '''
+        # use parent class value method to parse values
+        x1 = super(ExpSquaredKernel, self).value(x1, x2)
+
+        mat = np.zeros((x1.shape[0], x1.shape[0]))
+        for i in range(len(self.__ix_list__)):
+            # self.__compute_Sigma4derv_matrix__(i, x1)
+            # new implementation this should call the KernelDerivatives
+            # method
+            mat += self.terms_signs[i] * \
+                self.__compute_Sigma4derv_matrix__(
+                    x1, pars, ix_list[i], metric)
+
+        return mat
 
 
 class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
@@ -162,50 +188,12 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
-    # def __compute_Sigma4derv_matrix__(self, i, x):
-    #     '''
-    #     compute the coefficients due to the derivatives - this
-    #     should result in a symmetric N x N matrix where N is the
-    #     number of observations
-    #     '''
-
-    #     return np.array([[self.__Sigma4thDeriv__(self.pars, x,
-    #                                              self.__ix_list__[i],
-    #                                              m, n, self.__metric__)
-    #                      for m in range(x.shape[0])]
-    #                      for n in range(x.shape[0])
-    #                      ])
-
-
     def value(self, x1, x2=None):
-        '''
-        the child class's method overrides the parent class's method
-        to multiple our kernel with appropriate coefficients
-
-        computes the expression in eqn. (2)
-
-        :note:
-            not sure what x2 is for, my guess is that x1 is the training
-            data, x2 is the test data according to `gp.predict`
-
-        '''
-        # use parent class value method to parse values
-        x1 = super(ExpSquaredKernel, self).value(x1, x2)
-        #print "ndim of x1 is {0}".format(np.ndim(x1))
-        #print "x1 is {0}".format(x1)
-
-        mat = np.zeros((x1.shape[0], x1.shape[0]))
-        for i in range(len(self.__ix_list__)):
-            # self.__compute_Sigma4derv_matrix__(i, x1)
-            # new implementation this should call the KernelDerivatives
-            # method
-            mat += self.__terms_signs__[i] * \
-                self.__compute_Sigma4derv_matrix__(x1, self.pars,
-                                                   self.__ix_list__[i],
-                                                   self.__metric__)
-
-        return mat
-
+        return super(
+            KappaKappaExpSquareKernel, self).value(
+            self, x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=None)
 
     def debug_value(self, x1, x2=None):
         '''
@@ -234,6 +222,13 @@ class Gamma1Gamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, -1, -1, 1]
 
+    def value(self, x1, x2=None):
+        return super(
+            Gamma1Gamma1ExpSquareKernel, self).value(
+            self, x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=None)
+
 
 class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     '''
@@ -252,6 +247,13 @@ class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
                             [2, 1, 2, 1]]
 
         self.__terms_signs__ = [1, 1, 1, 1]
+
+    def value(self, x1, x2=None):
+        return super(
+            Gamma2Gamma2ExpSquareKernel, self).value(
+            self, x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=None)
 
 
 class KappaGamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
@@ -272,6 +274,12 @@ class KappaGamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, -1, 1, -1]
 
+    def value(self, x1, x2=None):
+        return super(
+            KappaGamma1ExpSquareKernel, self).value(
+            self, x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=None)
 
 class KappaGamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     '''
@@ -294,6 +302,13 @@ class KappaGamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
+    def value(self, x1, x2=None):
+        return super(
+            KappaGamma1ExpSquareKernel, self).value(
+            self, x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=None)
+
 
 class Gamma1Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     def __init__(self, metric, ndim=2, dim=-1, extra=[]):
@@ -306,6 +321,12 @@ class Gamma1Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, -1, -1]
 
+    def value(self, x1, x2=None):
+        return super(
+            KappaGamma1ExpSquareKernel, self).value(
+            self, x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=None)
 
 #------ begin documentation ----------------------------------------
 
