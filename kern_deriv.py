@@ -276,7 +276,7 @@ class Gamma1Gamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(KappaKappaExpSquareKernel, self).__init__()
+        super(Gamma1Gamma1ExpSquareKernel, self).__init__()
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -310,7 +310,7 @@ class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(KappaKappaExpSquareKernel, self).__init__()
+        super(Gamma2Gamma2ExpSquareKernel, self).__init__()
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -349,7 +349,7 @@ class KappaGamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(KappaKappaExpSquareKernel, self).__init__()
+        super(KappaGamma1ExpSquareKernel, self).__init__()
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -391,7 +391,7 @@ class KappaGamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(KappaKappaExpSquareKernel, self).__init__()
+        super(KappaGamma2ExpSquareKernel, self).__init__()
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -433,7 +433,7 @@ class Gamma1Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(KappaKappaExpSquareKernel, self).__init__()
+        super(Gamma1Gamma2ExpSquareKernel, self).__init__()
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
