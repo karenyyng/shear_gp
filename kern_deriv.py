@@ -264,78 +264,6 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         return super(KappaKappaExpSquareKernel, self).value(x1, x2)
 
 
-class Gamma1Gamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
-    """
-    Inherits from the ExpSquareKernel class and multiplies it with appropriate
-    coefficients
-
-    :params coords:
-    """
-    def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
-        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
-                                               dim=-dim, extra=[])
-
-        # this should call KernelDerivatives.__init__()
-        super(Gamma1Gamma1ExpSquareKernel, self).__init__()
-
-        assert len(coords.shape) == 2 and coords.shape[1] == 2, \
-            "dimension of the coord array is not compatible with kernel\n" + \
-            "needs numpy array of shape (n_obs, 2)"
-
-        # have to think about how to account for the negative sign in eqn (3)
-        self.__ix_list__ = np.array([[1, 1, 1, 1],
-                                     [1, 1, 2, 2],
-                                     [2, 2, 1, 1],
-                                     [2, 2, 2, 2]]) - 1
-
-        self.__terms_signs__ = [1, -1, -1, 1]
-
-    def value(self, x1, x2=None):
-        return super(
-            Gamma1Gamma1ExpSquareKernel, self).value(
-            self, x1, ix_list=self.__ix_list__,
-            pars=self.pars, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=None)
-
-
-class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
-    """
-    inherits from the ExpSquareKernel class and multiplies it with
-    appropriate coefficients
-
-    :params metric: a list of 2 integers
-    """
-    def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
-        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
-                                               dim=-dim, extra=[])
-
-        # this should call KernelDerivatives.__init__()
-        super(Gamma2Gamma2ExpSquareKernel, self).__init__()
-
-        assert len(coords.shape) == 2 and coords.shape[1] == 2, \
-            "dimension of the coord array is not compatible with kernel\n" + \
-            "needs numpy array of shape (n_obs, 2)"
-
-        self.__coords__ = coords
-
-        if type(metric) == float or type(metric) == int:
-            self.__metric__ = metric * np.ones(ndim)
-
-        self.__ix_list__ = [[1, 2, 1, 2],
-                            [1, 2, 2, 1],
-                            [2, 1, 1, 2],
-                            [2, 1, 2, 1]]
-
-        self.__terms_signs__ = [1, 1, 1, 1]
-
-    def value(self, x1, x2=None):
-        return super(
-            Gamma2Gamma2ExpSquareKernel, self).value(
-            self, x1, ix_list=self.__ix_list__,
-            pars=self.pars, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=None)
-
-
 class KappaGamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     """
     inherits from the ExpSquareKernel class and multiplies it with
@@ -412,6 +340,78 @@ class KappaGamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
     def value(self, x1, x2=None):
         return super(
             KappaGamma1ExpSquareKernel, self).value(
+            self, x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=None)
+
+
+class Gamma1Gamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
+    """
+    Inherits from the ExpSquareKernel class and multiplies it with appropriate
+    coefficients
+
+    :params coords:
+    """
+    def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                               dim=-dim, extra=[])
+
+        # this should call KernelDerivatives.__init__()
+        super(Gamma1Gamma1ExpSquareKernel, self).__init__()
+
+        assert len(coords.shape) == 2 and coords.shape[1] == 2, \
+            "dimension of the coord array is not compatible with kernel\n" + \
+            "needs numpy array of shape (n_obs, 2)"
+
+        # have to think about how to account for the negative sign in eqn (3)
+        self.__ix_list__ = np.array([[1, 1, 1, 1],
+                                     [1, 1, 2, 2],
+                                     [2, 2, 1, 1],
+                                     [2, 2, 2, 2]]) - 1
+
+        self.__terms_signs__ = [1, -1, -1, 1]
+
+    def value(self, x1, x2=None):
+        return super(
+            Gamma1Gamma1ExpSquareKernel, self).value(
+            self, x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=None)
+
+
+class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
+    """
+    inherits from the ExpSquareKernel class and multiplies it with
+    appropriate coefficients
+
+    :params metric: a list of 2 integers
+    """
+    def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                               dim=-dim, extra=[])
+
+        # this should call KernelDerivatives.__init__()
+        super(Gamma2Gamma2ExpSquareKernel, self).__init__()
+
+        assert len(coords.shape) == 2 and coords.shape[1] == 2, \
+            "dimension of the coord array is not compatible with kernel\n" + \
+            "needs numpy array of shape (n_obs, 2)"
+
+        self.__coords__ = coords
+
+        if type(metric) == float or type(metric) == int:
+            self.__metric__ = metric * np.ones(ndim)
+
+        self.__ix_list__ = [[1, 2, 1, 2],
+                            [1, 2, 2, 1],
+                            [2, 1, 1, 2],
+                            [2, 1, 2, 1]]
+
+        self.__terms_signs__ = [1, 1, 1, 1]
+
+    def value(self, x1, x2=None):
+        return super(
+            Gamma2Gamma2ExpSquareKernel, self).value(
             self, x1, ix_list=self.__ix_list__,
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=None)
