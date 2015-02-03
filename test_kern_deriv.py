@@ -1,6 +1,6 @@
 import george
 import numpy as np
-from kern_deriv import KappaKappaExpSquareKernel
+from kern_deriv import *
 import matplotlib.pyplot as plt
 
 
@@ -27,31 +27,33 @@ def test_KappaKappaExpSquare():
     return
 
 
-def plotKKCov(grid_extent=2, spacing=0.05):
-    coords = np.array([[i, j] for i in np.arange(0, grid_extent, spacing)
-                       for j in np.arange(0, grid_extent, spacing)])
+def plotDerivCov(kernel, grid_extent=2, spacing=0.05,):
+    coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
+    #coords = np.array([[i, j] for i in np.arange(0, grid_extent, spacing)
+    #                   for j in np.arange(0, grid_extent, spacing)])
 
-    k = KappaKappaExpSquareKernel(1.0, coords, ndim=2)
+    k =kernel(1.0, coords, ndim=2)
     gpKKExpSq = george.GP(1. * k)
 
     gpKKExpSq.compute(coords, 1)
 
     KKCov = gpKKExpSq.get_matrix(coords)
-    plt.imshow(KKCov, origin='upper', extent=[0, grid_extent, grid_extent, 0],
-               vmin=0, vmax=1)
+    plt.imshow(KKCov, origin='upper', extent=[0, grid_extent, grid_extent, 0])
+               #vmin=0, vmax=1)
     plt.xticks(rotation=45)
     # plt.yticks(np.arange(0, 1, 0.05))
     plt.title(
-        r'$Cov(\kappa, \kappa)$ as 4th deriv of ExpSq kernel on square grid' +
-        ' of spacing {0}'.format(spacing))
+        #r'$Cov(\kappa, \kappa)$ as 4th deriv of ExpSq kernel
+        kernel.__name__ + ' visualized on a line of coords of spacing' +
+        ' {0}'.format(spacing))
     plt.colorbar()
-    plt.savefig('./plots/covKappaKappa.png', bbox_inches='tight')
+    plt.savefig('./plots/' + kernel.__name__ + '.png', bbox_inches='tight')
     plt.close()
 
 
 def plotExpSqCov(grid_extent=2, spacing=0.05):
-    coords = np.array([[i, j] for i in np.arange(0, 1, spacing)
-                       for j in np.arange(0, 1, spacing)])
+    coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
+                     # for j in np.arange(0, 1, spacing)])
 
     k = george.kernels.ExpSquaredKernel(1.0, ndim=2)
     gpExpSq = george.GP(1. * k)
@@ -60,18 +62,24 @@ def plotExpSqCov(grid_extent=2, spacing=0.05):
 
     Cov = gpExpSq.get_matrix(coords)
     plt.imshow(Cov, origin='upper', extent=[0, grid_extent,
-                                            grid_extent, 0 ],
+                                            grid_extent, 0],
                vmin=0, vmax=1)
     plt.xticks(rotation=45)
     # plt.xticks(np.arange(0, 1, 0.05), rotation=45)
     # plt.yticks(np.arange(0, 1, 0.05))
-    plt.title(r'ExpSquared Kernel visualized on square grid of spacing ' +
+    plt.title(r'ExpSquared Kernel for points on a line with spacing 1' +
               '{0}'.format(spacing))
     plt.colorbar()
     plt.savefig('./plots/covExpSqKern.png', bbox_inches='tight')
     plt.close()
 
+
 if __name__ == "__main__":
     #test_KappaKappaExpSquare()
-    plotKKCov()
-    plotExpSqCov()
+    plotDerivCov(KappaKappaExpSquareKernel, grid_extent=5, spacing=1,)
+    plotDerivCov(KappaGamma1ExpSquareKernel, grid_extent=5, spacing=1,)
+    plotDerivCov(KappaGamma2ExpSquareKernel, grid_extent=5, spacing=1,)
+    plotDerivCov(Gamma1Gamma1ExpSquareKernel, grid_extent=5, spacing=1,)
+    plotDerivCov(Gamma1Gamma2ExpSquareKernel, grid_extent=5, spacing=1,)
+    plotDerivCov(Gamma2Gamma2ExpSquareKernel, grid_extent=5, spacing=1,)
+    plotExpSqCov(grid_extent=5, spacing=1)
