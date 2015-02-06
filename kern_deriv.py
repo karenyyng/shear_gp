@@ -268,17 +268,23 @@ class KappaKappaExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=None)
 
+
+        print("Kernel value = {0}".format(self.__kernel__))
         plt.clf()
-        print "KK Exp Square Kernel is {0}".format(self.__kernel__)
+        plt.title("{0}".format(self))
         plt.imshow(self.__kernel__, origin='upper')  #, cmap=plt.cmap.winter)
         plt.show()
 
     def value(self, x1, x2=None):
-        return super(
-             KappaKappaExpSquareKernel, self).value(
-             x1, ix_list=self.__ix_list__,
-             pars=self.pars, terms_signs=self.__terms_signs__,
-             metric=self.__metric__, x2=x2)
+        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        print "calling new kernel value method"
+        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        return self.__kernel__
+           # super(
+           #  KappaKappaExpSquareKernel, self).value(
+           #  x1, ix_list=self.__ix_list__,
+           #  pars=self.pars, terms_signs=self.__terms_signs__,
+           #  metric=self.__metric__, x2=x2)
 
     # def plotDerivCov(kernel, grid_extent=2, spacing=0.05,):
     #     coords = np.array([[0, i] for i in np.arange(0, grid_extent, spacing)])
@@ -343,19 +349,32 @@ class KappaGamma1ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         if type(metric) == float or type(metric) == int:
             self.__metric__ = metric * np.ones(ndim)
 
-        self.__ix_list__ = [[1, 1, 1, 1],
-                            [1, 1, 2, 2],  # negative
-                            [2, 2, 1, 1],
-                            [2, 2, 2, 2]]  # negative
+        self.__ix_list__ = np.array([[1, 1, 1, 1],
+                                     [1, 1, 2, 2],  # negative
+                                     [2, 2, 1, 1],
+                                     [2, 2, 2, 2]]) - 1  # negative
 
         self.__terms_signs__ = [1, -1, 1, -1]
 
-    def value(self, x1, x2=None):
-        return super(
-            KappaGamma1ExpSquareKernel, self).value(
-            self, x1, ix_list=self.__ix_list__,
+        self.__kernel__ = \
+            super(KappaGamma1ExpSquareKernel, self).value(
+            coords, ix_list=self.__ix_list__,
             pars=self.pars, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=x2)
+            metric=self.__metric__, x2=None)
+
+
+        plt.clf()
+        print "Kernel is {0}".format(self.__kernel__)
+        plt.imshow(self.__kernel__, origin='upper')  #, cmap=plt.cmap.winter)
+        plt.show()
+
+    def value(self, x1, x2=None):
+        return self.__kernel__
+        #super(
+        #    KappaGamma1ExpSquareKernel, self).value(
+        #    self, x1, ix_list=self.__ix_list__,
+        #    pars=self.pars, terms_signs=self.__terms_signs__,
+        #    metric=self.__metric__, x2=x2)
 
 
 class KappaGamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
@@ -385,10 +404,10 @@ class KappaGamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         if type(metric) == float or type(metric) == int:
             self.__metric__ = metric * np.ones(ndim)
 
-        self.__ix_list__ = [[1, 1, 1, 2],
-                            [1, 1, 2, 1],
-                            [2, 2, 1, 2],
-                            [2, 2, 2, 1]]
+        self.__ix_list__ = np.array([[1, 1, 1, 2],
+                                     [1, 1, 2, 1],
+                                     [2, 2, 1, 2],
+                                     [2, 2, 2, 1]]) - 1
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
@@ -457,10 +476,10 @@ class Gamma2Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         if type(metric) == float or type(metric) == int:
             self.__metric__ = metric * np.ones(ndim)
 
-        self.__ix_list__ = [[1, 2, 1, 2],
-                            [1, 2, 2, 1],
-                            [2, 1, 1, 2],
-                            [2, 1, 2, 1]]
+        self.__ix_list__ = np.array([[1, 2, 1, 2],
+                                     [1, 2, 2, 1],
+                                     [2, 1, 1, 2],
+                                     [2, 1, 2, 1]]) - 1
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
@@ -499,10 +518,10 @@ class Gamma1Gamma2ExpSquareKernel(KernelDerivatives, ExpSquaredKernel):
         if type(metric) == float or type(metric) == int:
             self.__metric__ = metric * np.ones(ndim)
 
-        self.__ix_list__ = [[1, 1, 1, 2],
-                            [1, 1, 2, 1],
-                            [2, 2, 1, 2],  # negative
-                            [2, 2, 2, 1]]  # negative
+        self.__ix_list__ = np.array([[1, 1, 1, 2],
+                                     [1, 1, 2, 1],
+                                     [2, 2, 1, 2],  # negative
+                                     [2, 2, 2, 1]]) - 1  # negative
 
         self.__terms_signs__ = [1, 1, -1, -1]
 
