@@ -478,7 +478,8 @@ All the relevant terms are boxed above,
 \begin{align}
 \Sigma_{,x_i x_j y_h y_k} &= (\beta^4 X_h X_j X_k X_i -  
 \beta^3 (X_j X_i D_{hk} \delta_{hk} + 5 {\rm perm.}) + \beta^2
-(D_{jh} D_{ik}\delta_{jh}\delta_{ik} + 2 {\rm perm.})) \Sigma 
+(D_{jh} D_{ik}\delta_{jh}\delta_{ik} + 2 {\rm perm.})) \Sigma\\
+&= \Gamma \Sigma 
 \end{align}
 
 Note that when we evaluate the terms in the parenthesis, they come out to be a

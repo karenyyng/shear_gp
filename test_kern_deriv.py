@@ -1,6 +1,6 @@
 import george
 import numpy as np
-from kern_deriv import KappaKappaExpSquareKernel
+from kern_deriv import KappaKappaExpSquaredKernel
 import matplotlib.pyplot as plt
 
 
@@ -12,8 +12,8 @@ def test_KappaKappaExpSquare():
 
     coords = np.array([[1, 3], [2, 5]])
 
-    # by default the kappaKappaExpSquareKernel has ndim = 2.0
-    k = KappaKappaExpSquareKernel(1.0, coords, ndim=2)
+    # by default the kappaKappaExpSquaredKernel has ndim = 2.0
+    k = KappaKappaExpSquaredKernel(1.0, coords, ndim=2)
     gpKKExpSq = george.GP(1. * k)
 
     gpExpSq.compute(coords, 1e-1)
@@ -76,10 +76,10 @@ def plotExpSqCov(grid_extent=2, spacing=0.05):
 
 if __name__ == "__main__":
     #test_KappaKappaExpSquare()
-    plotDerivCov(KappaKappaExpSquareKernel, grid_extent=10, spacing=5,)
-    # plotDerivCov(KappaGamma1ExpSquareKernel, grid_extent=5, spacing=1,)
-    # plotDerivCov(KappaGamma2ExpSquareKernel, grid_extent=5, spacing=1,)
-    # plotDerivCov(Gamma1Gamma1ExpSquareKernel, grid_extent=5, spacing=1,)
-    # plotDerivCov(Gamma1Gamma2ExpSquareKernel, grid_extent=5, spacing=1,)
-    # plotDerivCov(Gamma2Gamma2ExpSquareKernel, grid_extent=5, spacing=1,)
+    plotDerivCov(KappaKappaExpSquaredKernel, grid_extent=10, spacing=5,)
+    # plotDerivCov(KappaGamma1ExpSquaredKernel, grid_extent=5, spacing=1,)
+    # plotDerivCov(KappaGamma2ExpSquaredKernel, grid_extent=5, spacing=1,)
+    # plotDerivCov(Gamma1Gamma1ExpSquaredKernel, grid_extent=5, spacing=1,)
+    # plotDerivCov(Gamma1Gamma2ExpSquaredKernel, grid_extent=5, spacing=1,)
+    # plotDerivCov(Gamma2Gamma2ExpSquaredKernel, grid_extent=5, spacing=1,)
     plotExpSqCov(grid_extent=10, spacing=5)
