@@ -224,10 +224,11 @@ class KernelDerivatives(ExpSquaredKernel):
         print "Schur product is {0}\n".format(mat * cov_mat)
         return mat * cov_mat
 
-    def plot_kernel(self, spacing, save=False, fig="./plots/", name=None):
+    def plot_kernel(self, spacing, save=False, fig="./plots//", name=None):
         f, ax = plt.subplots(figsize=(12, 9))
         plt.axes().set_aspect('equal')
-        cm = plt.pcolor(self.__kernel__, cmap=plt.cm.Blues)
+        cm = plt.pcolor(self.__kernel__, cmap=plt.cm.Blues,
+                        vmin=0., vmax=2.5)
 
         # y axis should be flipped to match matrix indices
         ylim = plt.ylim()
