@@ -11,10 +11,10 @@ Karen Ng
 * overrode `value()` methods 
 	* simple example by multiplying `999` to original value 
 
-# Interface between Python and Cpp header: `george/kernels.pxd`   
+# what gets compiled into a `_cpp` file: `george/kernels.pxd`   
 
 * `if` loop to check `kernel_spec.kernel_type`
-* added new `kernel_spec.kernel_type = 10` for new class 
+* added new `kernel_spec.kernel_type` for new classes 
 
 # Actual Python class definition: `george/kernels.py`   
 
@@ -27,7 +27,7 @@ for proper import
 # Covariance matrix from `ExpSquaredKernel` 
 <img src="img/hacking_george/ExpSquaredKernel.png" width=65%> </img>
 
-# Covariance matrix from overridden method of `KappaKappaExpSquaredKernel`
+# Overridden covariance matrix of `KappaKappaExpSquaredKernel`
 <img src="img/hacking_george/KappaKappaExpSquaredKernel.png" width=65%> </img>
 
-
+# next steps 

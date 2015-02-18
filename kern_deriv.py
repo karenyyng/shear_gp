@@ -1,5 +1,5 @@
 """
-all functions as wrapper around George for our kernel derivatives
+prototype for the Cython code for implementing the derivatives of the kernels
 
 see: https://github.com/karenyyng/shear_gp/blob/master/notes/ker_deriv.pdf
 for the exact mathematical expressions
@@ -16,27 +16,24 @@ for how the kernels are implemented in george
 """
 from __future__ import division
 # import george
-from george.kernels import ExpSquaredKernel, Kernel, ConstantKernel, _operator
+from george.kernels import ExpSquaredKernel
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-class Product(_operator):
-    is_kernel = False
-    operator_type = 1
-
-    def __repr__(self):
-        return "{0} * {1}".format(self.k1, self.k2)
-
-
-class KernelDerivatives(Kernel):
+class KernelDerivatives(ExpSquaredKernel):
 
     """
     this is intended to be a `abstract` / `virtual` class and
     not to meant to be instantiated directly
+
+    need to inherit the value method of ExpSquaredKernel
     """
 
-    def __init__(self):
+    def __init__(self, metric, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                               dim=-dim, extra=[])
+
         # pick 2 pairs from 4 objects so we have 4C2 combinations
         self.__pairsOfBIndices__ = \
             [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2],
@@ -47,13 +44,6 @@ class KernelDerivatives(Kernel):
         # so we have 4C2 / 2 combinations = 3 """
         self.__pairsOfCIndices__ = \
             [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2]]
-
-    def __mul__(self, b):
-        """override the default multiplication operator"""
-        print "overriding default multiplication operator"
-        if not hasattr(b, "is_kernel"):
-            return Product(self, ConstantKernel(float(b), ndim=self.ndim))
-        return Product(self, b)
 
     def __X__(self, coords, m, n, spat_ix):
         return coords[m, spat_ix] - coords[n, spat_ix]
@@ -229,10 +219,26 @@ class KernelDerivatives(Kernel):
         cov_mat = super(KernelDerivatives, self).value(x1, x2)
 
         # return the Schur product of the matrix
+        print "kern deriv coeff is {0}\n".format(mat)
+        print "original cov_mat is {0}\n".format(cov_mat)
+        print "Schur product is {0}\n".format(mat * cov_mat)
         return mat * cov_mat
 
-    def debug_value(self):
-        print "DEBUGGING THE INHERITANCE"
+    def plot_kernel(self, spacing, save=False, fig="./plots/", name=None):
+        f, ax = plt.subplots(figsize=(12, 9))
+        plt.axes().set_aspect('equal')
+        cm = plt.pcolor(self.__kernel__, cmap=plt.cm.Blues)
+
+        # y axis should be flipped to match matrix indices
+        ylim = plt.ylim()
+        plt.ylim(ylim[::-1])
+        plt.xticks(rotation=45)
+        plt.title(name)
+        plt.colorbar(cm)
+        if save:
+            plt.savefig(fig + name + '.png', bbox_inches='tight')
+        plt.show()
+        plt.close()
         return
 
 
@@ -248,13 +254,13 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     .. math::
         eqn (2) from kern_deriv.pdf
     """
-
     def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
         super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(KappaKappaExpSquaredKernel, self).__init__()
+        super(KappaKappaExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                                         dim=-dim, extra=[])
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -273,66 +279,19 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
-        self.__kernel__ = \
-            super(KappaKappaExpSquaredKernel, self).value(
-                coords, ix_list=self.__ix_list__,
-                pars=self.pars, terms_signs=self.__terms_signs__,
-                metric=self.__metric__, x2=None)
-
-        print("Kernel value = {0}".format(self.__kernel__))
-        plt.clf()
-        plt.title("{0}".format(self))
-        plt.imshow(self.__kernel__, origin='upper')  # , cmap=plt.cmap.winter)
-        plt.show()
+        self.__kernel__ = self.value(coords)
+        print "Kernel is {0}".format(self.__kernel__)
 
     def value(self, x1, x2=None, param=None):
-        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        print "calling new kernel value method"
-        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        return self.__kernel__
-        # super(
-        #  KappaKappaExpSquaredKernel, self).value(
-        #  x1, ix_list=self.__ix_list__,
-        #  pars=self.pars, terms_signs=self.__terms_signs__,
-        #  metric=self.__metric__, x2=x2)
+        """ this won't be called by George correctly """
+        return super(KappaKappaExpSquaredKernel, self).value(
+            x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=x2)
 
-    # def plotDerivCov(kernel, grid_extent=2, spacing=0.05,):
-    #     coords = np.array([[0, i] for i in np.arange(0, grid_extent, spacing)])
-    # coords = np.array([[i, j] for i in np.arange(0, grid_extent, spacing)
-    # for j in np.arange(0, grid_extent, spacing)])
-
-    #     k = kernel(1.0, coords, ndim=2)
-    #     gpKKExpSq = george.GP(1. * k)
-
-    #     gpKKExpSq.compute(coords, 1e-5)
-
-    #     KKCov = gpKKExpSq.get_matrix(coords)
-    #     print "KKCov is {0}".format(KKCov)
-    #     plt.imshow(KKCov, origin='upper', extent=[0, grid_extent,
-    #                                               grid_extent, 0])
-    # vmin=0, vmax=1)
-    #     plt.xticks(rotation=45)
-    # plt.yticks(np.arange(0, 1, 0.05))
-    #     plt.title(
-    # r'$Cov(\kappa, \kappa)$ as 4th deriv of ExpSq kernel
-    #         kernel.__name__ + ' visualized on a line of coords of spacing' +
-    #         ' {0}'.format(spacing))
-    #     plt.colorbar()
-    #     plt.savefig('./plots/' + kernel.__name__ + '.png', bbox_inches='tight')
-    #     plt.close()
-
-        # calling the value this way is correct
-        # return KernelDerivatives.value(
-        #     x1, ix_list=self.__ix_list__,
-        #     pars=self.pars, terms_signs=self.__terms_signs__,
-        #     metric=self.__metric__, x2=x2)
-
-    # def debug_value(self, x1, x2=None):
-    #     """
-    #     for debugging purpose this calls the original values
-    #     for the computed matrix
-    #     """
-    #     return super(KappaKappaExpSquaredKernel, self).value(x1, x2)
+    def plot(self, spacing, save=False, fig="./plots",
+             name='KappaKappaExpSquaredKernel'):
+        self.plot_kernel(spacing, save=save, fig=fig, name=name)
 
 
 class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
@@ -350,7 +309,8 @@ class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(KappaGamma1ExpSquaredKernel, self).__init__()
+        super(KappaGamma1ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                                          dim=-dim, extra=[])
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -368,28 +328,20 @@ class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, -1, 1, -1]
 
-        self.__kernel__ = \
-            super(KappaGamma1ExpSquaredKernel, self).value(
-                coords, ix_list=self.__ix_list__,
-                pars=self.pars, terms_signs=self.__terms_signs__,
-                metric=self.__metric__, x2=None)
-
-        plt.clf()
-        print "Kernel is {0}".format(self.__kernel__)
-        plt.imshow(self.__kernel__, origin='upper')  # , cmap=plt.cmap.winter)
-        plt.show()
+        self.__kernel__ = self.value(self.__coords__)
 
     def value(self, x1, x2=None):
-        return self.__kernel__
-        # super(
-        #    KappaGamma1ExpSquaredKernel, self).value(
-        #    self, x1, ix_list=self.__ix_list__,
-        #    pars=self.pars, terms_signs=self.__terms_signs__,
-        #    metric=self.__metric__, x2=x2)
+        return super(KappaGamma1ExpSquaredKernel, self).value(
+            x1, ix_list=self.__ix_list__,
+            pars=self.pars, terms_signs=self.__terms_signs__,
+            metric=self.__metric__, x2=x2)
+
+    def plot(self, spacing, save=False, fig="./plots",
+             name='KappaGamma1ExpSquaredKernel'):
+        self.plot_kernel(spacing, save=save, fig=fig, name=name)
 
 
 class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
-
     """
     inherits from the ExpSquaredKernel class and multiplies it with appropriate
     coefficients
@@ -406,7 +358,8 @@ class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(KappaGamma2ExpSquaredKernel, self).__init__()
+        super(KappaGamma2ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                                          dim=-dim, extra=[])
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -424,16 +377,21 @@ class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
+        self.__kernel__ = self.value(self.__coords__)
+
     def value(self, x1, x2=None):
         return super(
-            KappaGamma1ExpSquaredKernel, self).value(
-            self, x1, ix_list=self.__ix_list__,
+            KappaGamma2ExpSquaredKernel, self).value(
+            x1, ix_list=self.__ix_list__,
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
 
+    def plot(self, spacing, save=False, fig="./plots",
+             name="KappaGamma2ExpSquaredKernel"):
+        self.plot_kernel(spacing, save=save, fig=fig, name=name)
+
 
 class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
-
     """
     Inherits from the ExpSquaredKernel class and multiplies it with appropriate
     coefficients
@@ -446,11 +404,15 @@ class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(Gamma1Gamma1ExpSquaredKernel, self).__init__()
+        super(Gamma1Gamma1ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                                           dim=-dim, extra=[])
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
             "needs numpy array of shape (n_obs, 2)"
+
+        if isinstance(metric, float) or isinstance(metric, int):
+            self.__metric__ = metric * np.ones(ndim)
 
         # have to think about how to account for the negative sign in eqn (3)
         self.__ix_list__ = np.array([[1, 1, 1, 1],
@@ -460,12 +422,19 @@ class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, -1, -1, 1]
 
+        self.__coords__ = coords
+
+        self.__kernel__ = self.value(self.__coords__)
+
     def value(self, x1, x2=None):
-        return super(
-            Gamma1Gamma1ExpSquaredKernel, self).value(
-            self, x1, ix_list=self.__ix_list__,
+        return super(Gamma1Gamma1ExpSquaredKernel, self).value(
+            x1, ix_list=self.__ix_list__,
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
+
+    def plot(self, spacing, save=False, fig="./plots",
+             name='Gamma1Gamma1ExpSquaredKernel'):
+        self.plot_kernel(spacing, save=save, fig=fig, name=name)
 
 
 class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
@@ -482,7 +451,8 @@ class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(Gamma2Gamma2ExpSquaredKernel, self).__init__()
+        super(Gamma2Gamma2ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                                           dim=-dim, extra=[])
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -500,12 +470,18 @@ class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
+        self.__kernel__ = self.value(coords)
+
     def value(self, x1, x2=None):
         return super(
             Gamma2Gamma2ExpSquaredKernel, self).value(
-            self, x1, ix_list=self.__ix_list__,
+            x1, ix_list=self.__ix_list__,
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
+
+    def plot(self, spacing, save=False, fig="./plots",
+             name='Gamma2Gamma2ExpSquaredKernel'):
+        self.plot_kernel(spacing, save=save, fig=fig, name=name)
 
 
 class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
@@ -520,13 +496,13 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
         eqn (6) from kern_deriv.pdf
 
     """
-
     def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
         super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
-        super(Gamma1Gamma2ExpSquaredKernel, self).__init__()
+        super(Gamma1Gamma2ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+                                                           dim=-dim, extra=[])
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \
             "dimension of the coord array is not compatible with kernel\n" + \
@@ -544,9 +520,14 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, -1, -1]
 
+        self.__kernel__ = self.value(coords)
+
     def value(self, x1, x2=None):
-        return super(
-            KappaGamma1ExpSquaredKernel, self).value(
-            self, x1, ix_list=self.__ix_list__,
+        return super(Gamma1Gamma2ExpSquaredKernel, self).value(
+            x1, ix_list=self.__ix_list__,
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
+
+    def plot(self, spacing, save=False, fig="./plots",
+             name='Gamma1Gamma2ExpSquaredKernel'):
+        self.plot_kernel(spacing, save=save, fig=fig, name=name)
