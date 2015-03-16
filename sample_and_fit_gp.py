@@ -108,13 +108,17 @@ def standardize_data(coords):
     return
 
 
-def normalize_data(coords):
-    """scale data coords between the range of [0, 1] and returns a copy of the
-    data
+def normalize_2D_data(coords):
+    """scale data coords between the range of [0, 1] along each spatial
+    dimension and returns a copy of the data
+    :param coords: 2D np.array
     """
-    #psi = psi.copy()
-    #return (psi - psi.ravel().min()) / (psi.ravel().max() - psi.ravel().min())
-    return
+    n_spat_dim = coords.shape[1]
+
+    norm = np.array([coords.transpose()[i].max() - coords.transpose()[i].min()
+                     for i in range(n_spat_dim)])
+
+    return coords / norm
 
 
 def invgamma_pdf(x, alpha, beta):

@@ -486,6 +486,12 @@ Note that when we evaluate the terms in the parenthesis, they come out to be a
 $n \times n$ matrix, and we should multiply those terms to $\Sigma$ using a
 [Schur product](http://en.wikipedia.org/wiki/Hadamard_product_(matrices))
 
+Each spatial derivative result in an extra factor of inverse length in
+terms of the units. 
+Therefore, the covariance function of the 4th spatial derivative has units
+of (inverse length)$^4$ ... which seems like there could be factors of some
+constants missing that should cancel out the units.
+
 ## notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
  indices, e.g. 1122, nor 2211 nor 1111 etc., so

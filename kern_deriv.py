@@ -48,8 +48,9 @@ class KernelDerivatives(ExpSquaredKernel):
     def __X__(self, coords, m, n, spat_ix):
         return coords[m, spat_ix] - coords[n, spat_ix]
 
-    def __termA__(self, coords, ix, m, n):
+    def __termA__(self, coords, ix, m, n, debug=False):
         """
+        # the constructor also needs the coordinates
         Compute term 1 in equation (24) without leading factors of $\beta^4$
 
         :params coords: numpy array,
@@ -65,13 +66,16 @@ class KernelDerivatives(ExpSquaredKernel):
             X_i X_j X_h X_k
         """
         term = 1
+        if debug:
+            print "indices of term A = {0}".format(ix)
+            print "type of indices of term A = ", len(ix)
         # print "ix in termA is ", ix
         for i in ix:
             term *= self.__X__(coords, m, n, i)
 
         return term
 
-    def __termB__(self, coords, ix, m, n, metric):
+    def __termB__(self, coords, ix, m, n, metric, debug=False):
         """
         Compute term 2 in equation (24) without leading factors of $\beta^3$
 
@@ -94,6 +98,9 @@ class KernelDerivatives(ExpSquaredKernel):
         .. math:
             X_a X_b D_{cd} \delta_{cd}
         """
+        if debug is True:
+            print "indices of term B = {0}".format(ix)
+
         if ix[2] != ix[3]:
             return 0
 
@@ -101,7 +108,7 @@ class KernelDerivatives(ExpSquaredKernel):
             self.__X__(coords, m, n, ix[1]) * \
             metric[ix[2]]
 
-    def __termC__(self, coords, ix, metric):
+    def __termC__(self, coords, ix, metric, debug=False):
         """
         Compute term 3 in equation (24) without leading factor of $\beta^2$
 
@@ -118,6 +125,9 @@ class KernelDerivatives(ExpSquaredKernel):
         .. math:
             D_{ab} D_{cd} \delta_{ab} \delta_{cd}
         """
+        if debug:
+            print "indices of term C = {0}".format(ix)
+
         if ix[0] != ix[1]:
             return 0
 
@@ -187,7 +197,7 @@ class KernelDerivatives(ExpSquaredKernel):
 
         return np.array([[self.__Sigma4thDeriv__(par, x, ix, m, n, metric,
                                                  debug=False)
-                         for m in range(x.shape[0])]
+                          for m in range(x.shape[0])]
                          for n in range(x.shape[0])
                          ])
 
@@ -224,11 +234,11 @@ class KernelDerivatives(ExpSquaredKernel):
         print "Schur product is {0}\n".format(mat * cov_mat)
         return mat * cov_mat
 
-    def plot_kernel(self, spacing, save=False, fig="./plots//", name=None):
+    def plot_kernel_mtx(self, spacing, save=False, fig="./plots/", name=None):
         f, ax = plt.subplots(figsize=(12, 9))
         plt.axes().set_aspect('equal')
-        cm = plt.pcolor(self.__kernel__, cmap=plt.cm.Blues,
-                        vmin=0., vmax=2.5)
+        cm = plt.pcolor(self.__kernel__, cmap=plt.cm.Blues)  # ,
+        # vmin=0., vmax=2.5)
 
         # y axis should be flipped to match matrix indices
         ylim = plt.ylim()
@@ -240,6 +250,9 @@ class KernelDerivatives(ExpSquaredKernel):
             plt.savefig(fig + name + '.png', bbox_inches='tight')
         plt.show()
         plt.close()
+        return
+
+    def plot_corr(self, ):
         return
 
 
@@ -255,6 +268,7 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     .. math::
         eqn (2) from kern_deriv.pdf
     """
+
     def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
         super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
                                                dim=-dim, extra=[])
@@ -290,9 +304,9 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
 
-    def plot(self, spacing, save=False, fig="./plots",
-             name='KappaKappaExpSquaredKernel'):
-        self.plot_kernel(spacing, save=save, fig=fig, name=name)
+    def plot1(self, spacing, save=False, fig="./plots",
+              name='KappaKappaExpSquaredKernel'):
+        self.plot_kernel_mtx(spacing, save=save, fig=fig, name=name)
 
 
 class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
@@ -337,12 +351,13 @@ class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
 
-    def plot(self, spacing, save=False, fig="./plots",
-             name='KappaGamma1ExpSquaredKernel'):
-        self.plot_kernel(spacing, save=save, fig=fig, name=name)
+    def plot1(self, spacing, save=False, fig="./plots",
+              name='KappaGamma1ExpSquaredKernel'):
+        self.plot_kernel_mtx(spacing, save=save, fig=fig, name=name)
 
 
 class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
+
     """
     inherits from the ExpSquaredKernel class and multiplies it with appropriate
     coefficients
@@ -387,12 +402,13 @@ class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
 
-    def plot(self, spacing, save=False, fig="./plots",
-             name="KappaGamma2ExpSquaredKernel"):
-        self.plot_kernel(spacing, save=save, fig=fig, name=name)
+    def plot1(self, spacing, save=False, fig="./plots",
+              name="KappaGamma2ExpSquaredKernel"):
+        self.plot_kernel_mtx(spacing, save=save, fig=fig, name=name)
 
 
 class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
+
     """
     Inherits from the ExpSquaredKernel class and multiplies it with appropriate
     coefficients
@@ -433,9 +449,9 @@ class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
 
-    def plot(self, spacing, save=False, fig="./plots",
-             name='Gamma1Gamma1ExpSquaredKernel'):
-        self.plot_kernel(spacing, save=save, fig=fig, name=name)
+    def plot1(self, spacing, save=False, fig="./plots",
+              name='Gamma1Gamma1ExpSquaredKernel'):
+        self.plot_kernel_mtx(spacing, save=save, fig=fig, name=name)
 
 
 class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
@@ -480,9 +496,9 @@ class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
 
-    def plot(self, spacing, save=False, fig="./plots",
-             name='Gamma2Gamma2ExpSquaredKernel'):
-        self.plot_kernel(spacing, save=save, fig=fig, name=name)
+    def plot1(self, spacing, save=False, fig="./plots",
+              name='Gamma2Gamma2ExpSquaredKernel'):
+        self.plot_kernel_mtx(spacing, save=save, fig=fig, name=name)
 
 
 class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
@@ -497,6 +513,7 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
         eqn (6) from kern_deriv.pdf
 
     """
+
     def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
         super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
                                                dim=-dim, extra=[])
@@ -529,6 +546,6 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
             pars=self.pars, terms_signs=self.__terms_signs__,
             metric=self.__metric__, x2=x2)
 
-    def plot(self, spacing, save=False, fig="./plots",
-             name='Gamma1Gamma2ExpSquaredKernel'):
-        self.plot_kernel(spacing, save=save, fig=fig, name=name)
+    def plot1(self, spacing, save=False, fig="./plots",
+              name='Gamma1Gamma2ExpSquaredKernel'):
+        self.plot_kernel_mtx(spacing, save=save, fig=fig, name=name)
