@@ -27,11 +27,11 @@ class KernelDerivatives(ExpSquaredKernel):
     this is intended to be a `abstract` / `virtual` class and
     not to meant to be instantiated directly
 
-    need to inherit the value method of ExpSquaredKernel
+    need to inherit the `value` method of ExpSquaredKernel
     """
 
-    def __init__(self, metric, ndim=2, dim=-1, extra=[]):
-        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+    def __init__(self, corr, ndim=2, dim=-1, extra=[], rMetric=1.):
+        super(ExpSquaredKernel, self).__init__(rMetric, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # pick 2 pairs from 4 objects so we have 4C2 combinations
@@ -99,6 +99,7 @@ class KernelDerivatives(ExpSquaredKernel):
             X_a X_b D_{cd} \delta_{cd}
         """
         if debug is True:
+            print "metric = {0}".format(metric)
             print "indices of term B = {0}".format(ix)
 
         if ix[2] != ix[3]:
@@ -126,6 +127,7 @@ class KernelDerivatives(ExpSquaredKernel):
             D_{ab} D_{cd} \delta_{ab} \delta_{cd}
         """
         if debug:
+            print "metric = {0}".format(metric)
             print "indices of term C = {0}".format(ix)
 
         if ix[0] != ix[1]:
@@ -148,6 +150,9 @@ class KernelDerivatives(ExpSquaredKernel):
             with shape (nObs, ndim)
 
         :params ix: list of 4 integers
+
+        :returns: components of the $\Gamma$ term in eqn (27) without the signs
+        :note: see eqn (2) etc. for the factor of 1 / 4.
         """
 
         if isinstance(corr, np.ndarray) and len(corr) == 1:
@@ -163,27 +168,30 @@ class KernelDerivatives(ExpSquaredKernel):
 
         # combBix is the subscript indices combination for B terms
         for i in range(6):
-            allTermBs += self.__termB__(coords, combBix[i], m, n, metric)
+            allTermBs += self.__termB__(coords, combBix[i], m, n, metric,
+                                        debug=debug)
 
         allTermCs = 0
         combCix = \
             [[ix[i] for i in self.__pairsOfCIndices__[j]] for j in range(3)]
 
         for i in range(3):
-            allTermCs += self.__termC__(coords, combCix[i], metric)
+            allTermCs += self.__termC__(coords, combCix[i], metric,
+                                        debug=debug)
 
         termA = self.__termA__(coords, ix, m, n)
 
         if debug:
             print "combBix is ", combBix
             print "combCix is ", combCix
+            print "beta is ", beta
             print "terms are {0}, {1}, {2}".format(termA, allTermBs, allTermCs)
 
-        return (beta ** 4. * termA +
+        return (beta ** 4. * termA -
                 beta ** 3. * allTermBs +
                 beta ** 2. * allTermCs) / 4.
 
-    def __compute_Sigma4derv_matrix__(self, x, par, ix, metric):
+    def __compute_Sigma4derv_matrix__(self, x, par, ix, metric, debug=False):
         """
         Compute the coefficients due to the derivatives - this
         should result in a symmetric N x N matrix where N is the
@@ -196,8 +204,8 @@ class KernelDerivatives(ExpSquaredKernel):
         """
 
         return np.array([[self.__Sigma4thDeriv__(par, x, ix, m, n, metric,
-                                                 debug=False)
-                          for m in range(x.shape[0])]
+                                                 debug=debug)
+                         for m in range(x.shape[0])]
                          for n in range(x.shape[0])
                          ])
 
@@ -218,20 +226,21 @@ class KernelDerivatives(ExpSquaredKernel):
         # use parent class, Kernel.value method to parse values
 
         mat = np.zeros((x1.shape[0], x1.shape[0]))
-        for i in range(len(self.__ix_list__)):
+        for i in range(len(ix_list)):
             # self.__compute_Sigma4derv_matrix__(i, x1)
             # new implementation this should call the KernelDerivatives
             # method
             mat += terms_signs[i] * \
-                self.__compute_Sigma4derv_matrix__(x1, pars, ix_list[i],
+                self.__compute_Sigma4derv_matrix__(x1, pars,
+                                                   ix_list[i],
                                                    metric)
 
         cov_mat = super(KernelDerivatives, self).value(x1, x2)
 
         # return the Schur product of the matrix
-        print "kern deriv coeff is {0}\n".format(mat)
-        print "original cov_mat is {0}\n".format(cov_mat)
-        print "Schur product is {0}\n".format(mat * cov_mat)
+        # print "kern deriv coeff is {0}\n".format(mat)
+        # print "original cov_mat is {0}\n".format(cov_mat)
+        # print "Schur product is {0}\n".format(mat * cov_mat)
         return mat * cov_mat
 
     def plot_kernel_mtx(self, spacing, save=False, fig="./plots/", name=None):
@@ -269,12 +278,13 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
         eqn (2) from kern_deriv.pdf
     """
 
-    def __init__(self, metric, coords, ndim=2, dim=-1, extra=[]):
-        super(ExpSquaredKernel, self).__init__(metric, ndim=ndim,
+    def __init__(self, corr, coords, ndim=2, dim=-1, extra=[]):
+        super(ExpSquaredKernel, self).__init__(corr, ndim=ndim,
                                                dim=-dim, extra=[])
+        metric = 1.
 
         # this should call KernelDerivatives.__init__()
-        super(KappaKappaExpSquaredKernel, self).__init__(metric, ndim=ndim,
+        super(KappaKappaExpSquaredKernel, self).__init__(corr, ndim=ndim,
                                                          dim=-dim, extra=[])
 
         assert len(coords.shape) == 2 and coords.shape[1] == 2, \

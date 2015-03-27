@@ -34,6 +34,11 @@ def char_dim(rho):
 
 
 def make_grid(rng, spacing):
+    """
+    :param rng: list / tuple of two floats
+        denotes the lower and upper range of the range
+    :param spacing: positive float
+    """
     # use regular grid
     xg = np.arange(rng[0], rng[1], spacing)
     yg = np.arange(rng[0], rng[1], spacing)
