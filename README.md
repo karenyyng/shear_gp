@@ -3,6 +3,10 @@ page](https://trello.com/b/gvclhujL/shear-gp) for more info.
 
 
 # prerequisites 
+See `py_package_dependencies.txt` for prerequisite packages to run this code.
+Here is a
+[post](http://karenyyng.github.io/using-virtualenv-for-safeguarding-research-project-dependencies.html)
+on how to set up a `virtualenv` for this project. 
 
 # file structures 
 * functions for analyzing code are in this directory
