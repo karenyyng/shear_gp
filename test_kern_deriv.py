@@ -41,11 +41,11 @@ def plotDerivCov(kernel, coords, beta=1.):
     return k.value(coords)
 
 
-def plotExpSqCov(coords, plot=False, save=False, beta=1.):
+def plotExpSqCov(coords, plot=False, save=False, beta=1., lambDa=1.):
     # coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
 
-    k = george.kernels.ExpSquaredKernel(1.0, ndim=2)
-    gpExpSq = george.GP(beta * k)
+    k = george.kernels.ExpSquaredKernel(beta, ndim=2)
+    gpExpSq = george.GP(lambDa * k)
 
     gpExpSq.compute(coords, 1e-5)
 
@@ -79,11 +79,11 @@ def plotPearsonCorr(Cov, pos_definiteness, betas):
 if __name__ == "__main__":
     grid_rng = (0., 10.)
     spacing = 1.
-    beta = .3
+    beta = 0.5
 
-    # coords = np.array([[1., i] for i in np.arange(0, 1, 0.1)])
-    coords = make_grid(grid_rng, spacing)
-    coords = normalize_2D_data(coords)
+    coords = np.array([[1., i] for i in np.arange(0, 1, 0.1)])
+    # coords = make_grid(grid_rng, spacing)
+    # coords = normalize_2D_data(coords)
 
     plotExpSqCov(coords, plot=True, save=False)
 
@@ -93,20 +93,18 @@ if __name__ == "__main__":
     print "beta is {0}".format(beta)
     Cov["KappaKappaCov"] = plotDerivCov(KappaKappaExpSquaredKernel,
                                         coords, beta=beta)
-    # Cov["KappaGamma1Cov"] = plotDerivCov(KappaGamma1ExpSquaredKernel,
-    #                                      coords, beta=beta)
-    # Cov["KappaGamma2Cov"] = plotDerivCov(KappaGamma2ExpSquaredKernel,
-    #                                      grid_extent=grid_extent,
-    #                                      spacing=spacing, beta=beta)
-    # Cov["Gamma1Gamma1Cov"] = plotDerivCov(Gamma1Gamma1ExpSquaredKernel,
-    #                                       grid_extent=grid_extent,
-    #                                       spacing=spacing, beta=beta)
-    # Cov["Gamma1Gamma2Cov"] = plotDerivCov(Gamma1Gamma2ExpSquaredKernel,
-    #                                       grid_extent=grid_extent,
-    #                                       spacing=spacing, beta=beta)
-    # Cov["Gamma2Gamma2Cov"] = plotDerivCov(Gamma2Gamma2ExpSquaredKernel,
-    #                                       grid_extent=grid_extent,
-    #                                       spacing=spacing, beta=beta)
+    Cov["KappaGamma1Cov"] = plotDerivCov(KappaGamma1ExpSquaredKernel,
+                                         coords, beta=beta)
+    Cov["KappaGamma2Cov"] = plotDerivCov(KappaGamma2ExpSquaredKernel,
+                                         coords, beta=beta)
+    Cov["Gamma1Gamma1Cov"] = plotDerivCov(Gamma1Gamma1ExpSquaredKernel,
+                                          coords, beta=beta)
+    Cov["Gamma1Gamma2Cov"] = plotDerivCov(Gamma1Gamma2ExpSquaredKernel,
+                                          coords, beta=beta)
+    Cov["Gamma2Gamma2Cov"] = plotDerivCov(Gamma2Gamma2ExpSquaredKernel,
+                                          coords, beta=beta)
 
     pos_definiteness = {k: np.linalg.slogdet(Cov[k]) for k in Cov.keys()}
 
+    for k in pos_definiteness.keys():
+        print k, " ", pos_definiteness[k]
