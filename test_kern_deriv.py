@@ -26,18 +26,21 @@ def test_KappaKappaExpSquare(coords, beta=1.):
     return
 
 
-def plotDerivCov(kernel, coords, beta=1.):
+def plotDerivCov(kernel, coords, beta=1., plot=False, debug=False):
     # coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
 
     k = kernel(beta, coords, ndim=2)
     gpKKExpSq = george.GP(1.0 * k)
 
-    print "------------------------------------------------------------------"
-    print "print info about {0}".format(kernel.__name__)
+    if debug:
+        print "--------------------------------------------------------------"
+        print "print info about {0}".format(kernel.__name__)
     gpKKExpSq.compute(coords, 1e-5)
-    k.plot1(spacing=spacing, save=False)
+    if plot:
+        k.plot1(spacing=spacing, save=False)
     plt.close()
-    print "------------------------------------------------------------------"
+    if debug:
+        print "--------------------------------------------------------------"
     return k.value(coords)
 
 
@@ -68,18 +71,32 @@ def plotExpSqCov(coords, plot=False, save=False, beta=1., lambDa=1.):
         plt.close()
 
 
-def plotPearsonCorr(Cov, pos_definiteness, betas):
+def plotFixedCov(Cov, beta):
     """
     :param Cov: dictionary of np arrays
     :param pos_definiteness: dictionary of tuples
     ::
     """
+    i = range(Cov.shape[0])
+    fixIx = 4
+    CovArray = [Cov[ix, fixIx] for ix in i]
+    pos_def = np.linalg.slogdet(Cov)
+    if pos_def[0] == 1.0:
+        color = (0, 0, beta)
+    else:
+        color = (beta, 0., 0.)
+
+    plt.plot(i, CovArray, label=r"$\beta = ${0}".format(beta), color=color)
+    plt.xlabel("Cov index")
+    plt.ylabel("Cov[i, {0}] value".format(fixIx))
+
     return
+
 
 if __name__ == "__main__":
     grid_rng = (0., 10.)
     spacing = 1.
-    beta = 0.5
+    betas = np.arange(0.1, 1.0, 0.1)  # what's a reasonable range?
 
     coords = np.array([[1., i] for i in np.arange(0, 1, 0.1)])
     # coords = make_grid(grid_rng, spacing)
@@ -90,21 +107,31 @@ if __name__ == "__main__":
     # coords = np.arange(grid_extent, step=spacing)
 
     Cov = {}
-    print "beta is {0}".format(beta)
-    Cov["KappaKappaCov"] = plotDerivCov(KappaKappaExpSquaredKernel,
+    Cov["KappaKappa"] = [plotDerivCov(KappaKappaExpSquaredKernel,
+                                      coords, beta=beta)
+                         for beta in betas]
+    Cov["KappaGamma1"] = [plotDerivCov(KappaGamma1ExpSquaredKernel,
+                                       coords, beta=beta)
+                          for beta in betas]
+    Cov["KappaGamma2"] = [plotDerivCov(KappaGamma2ExpSquaredKernel,
+                                       coords, beta=beta)
+                          for beta in betas]
+    Cov["Gamma1Gamma1"] = [plotDerivCov(Gamma1Gamma1ExpSquaredKernel,
                                         coords, beta=beta)
-    Cov["KappaGamma1Cov"] = plotDerivCov(KappaGamma1ExpSquaredKernel,
-                                         coords, beta=beta)
-    Cov["KappaGamma2Cov"] = plotDerivCov(KappaGamma2ExpSquaredKernel,
-                                         coords, beta=beta)
-    Cov["Gamma1Gamma1Cov"] = plotDerivCov(Gamma1Gamma1ExpSquaredKernel,
-                                          coords, beta=beta)
-    Cov["Gamma1Gamma2Cov"] = plotDerivCov(Gamma1Gamma2ExpSquaredKernel,
-                                          coords, beta=beta)
-    Cov["Gamma2Gamma2Cov"] = plotDerivCov(Gamma2Gamma2ExpSquaredKernel,
-                                          coords, beta=beta)
+                           for beta in betas]
+    Cov["Gamma1Gamma2"] = [plotDerivCov(Gamma1Gamma2ExpSquaredKernel,
+                                        coords, beta=beta)
+                           for beta in betas]
+    Cov["Gamma2Gamma2"] = [plotDerivCov(Gamma2Gamma2ExpSquaredKernel,
+                                        coords, beta=beta)
+                           for beta in betas]
 
-    pos_definiteness = {k: np.linalg.slogdet(Cov[k]) for k in Cov.keys()}
+    for k in Cov.keys():
+        for i in range(len(betas)):
+            plotFixedCov(Cov[k][i], betas[i])
+            plt.legend(loc='best', frameon=False, fontsize=10)
+        plt.title(k)
+        plt.show()
+        plt.close()
 
-    for k in pos_definiteness.keys():
-        print k, " ", pos_definiteness[k]
+

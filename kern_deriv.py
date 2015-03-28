@@ -207,7 +207,8 @@ class KernelDerivatives(ExpSquaredKernel):
                          for n in range(x.shape[0])
                          ])
 
-    def value(self, x1, ix_list, pars, terms_signs, metric, x2=None):
+    def value(self, x1, ix_list, pars, terms_signs, metric, x2=None,
+              debug=False):
         """
         This child class's method overrides the parent class's method
         to multiple our kernel with appropriate coefficients
@@ -225,8 +226,9 @@ class KernelDerivatives(ExpSquaredKernel):
             data, x2 is the test data according to `gp.predict`
 
         """
-        print "calling KernelDerivatives class value method"
-        print "pars for beta is {0}".format(pars)
+        if debug:
+            print "calling KernelDerivatives class value method"
+            print "pars for beta is {0}".format(pars)
         # use parent class, Kernel.value method to parse values
 
         mat = np.zeros((x1.shape[0], x1.shape[0]))
@@ -261,6 +263,7 @@ class KernelDerivatives(ExpSquaredKernel):
         plt.colorbar(cm)
         if save:
             plt.savefig(fig + name + '.png', bbox_inches='tight')
+
         plt.show()
         plt.close()
         return
