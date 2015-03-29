@@ -131,7 +131,7 @@ if __name__ == "__main__":
             plotFixedCov(Cov[k][i], betas[i])
             plt.legend(loc='best', frameon=False, fontsize=10)
         plt.title(k)
-        plt.show()
+        plt.savefig("./plots/" + k + "_Cov.png", bbox_inches='tight')
         plt.close()
 
 
