@@ -1,11 +1,11 @@
 import george
 import numpy as np
 from kern_deriv import *
-from sample_and_fit_gp import (make_grid, normalize_2D_data)
+from sample_and_fit_gp import (make_grid)
 import matplotlib.pyplot as plt
 
 
-def test_KappaKappaExpSquare(coords, beta=1.):
+def run_KappaKappaExpSquare(coords, beta=1.):
     """sanity check"""
     k1 = 1.0 * george.kernels.ExpSquaredKernel(metric=beta, ndim=2)
     print "pars of original kernel are {0}".format(k1)
@@ -44,7 +44,8 @@ def plotDerivCov(kernel, coords, beta=1., plot=False, debug=False):
     return k.value(coords)
 
 
-def plotExpSqCov(coords, plot=False, save=False, beta=1., lambDa=1.):
+def plotExpSqCov(coords, plot1=False, plot2=True, save=False, beta=1.,
+                 lambDa=1.):
     # coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
 
     k = george.kernels.ExpSquaredKernel(beta, ndim=2)
@@ -53,60 +54,89 @@ def plotExpSqCov(coords, plot=False, save=False, beta=1., lambDa=1.):
     gpExpSq.compute(coords, 1e-5)
 
     Cov = gpExpSq.get_matrix(coords)
-    if plot:
-        f, ax = plt.subplots(figsize=(12, 9))
-        plt.axes().set_aspect('equal')
-        cm = plt.pcolor(Cov, cmap=plt.cm.Blues)  # , vmin=0, vmax=2.5)
-        ylim = plt.ylim()
-        plt.ylim(ylim[::-1])
-        plt.xticks(rotation=45)
-        # plt.xticks(np.arange(0, grid_extent, spacing), rotation=45)
-        # plt.yticks(np.arange(grid_extent, 0, spacing))
-        plt.title("ExpSquaredKernel " +
-                  r'for points on a line ' +
-                  'with spacing {0}'.format(spacing))
-        plt.colorbar(cm)
-        plt.savefig("./plots/ExpSqCov.png", bbox_inches='tight')
-        plt.show()
-        plt.close()
+    if plot1:
+        plotCovMatrix(Cov, kernel_name="ExpSquaredKernel")
+
+    if plot2:
+        plotFixedCov(Cov, beta, coords)
+    return Cov
 
 
-def plotFixedCov(Cov, beta):
+def plotCovMatrix(Cov, kernel_name):
+    f, ax = plt.subplots(figsize=(12, 9))
+    plt.axes().set_aspect('equal')
+    cm = plt.pcolor(Cov, cmap=plt.cm.Blues)  # , vmin=0, vmax=2.5)
+    ylim = plt.ylim()
+    plt.ylim(ylim[::-1])
+    plt.xticks(rotation=45)
+    plt.title(kernel_name +
+              r'for points on a line ' +
+              'with spacing {0}'.format(spacing))
+    plt.colorbar(cm)
+    if save:
+        plt.savefig("./plots/" + kernel_name + ".png", bbox_inches='tight')
+    plt.show()
+    plt.close()
+
+
+def plotFixedCov(Cov, beta, features):
     """
     :param Cov: dictionary of np arrays
     :param pos_definiteness: dictionary of tuples
-    ::
+    :param features: np array, should be 2D array of floats
     """
     i = range(Cov.shape[0])
     fixIx = 4
     CovArray = [Cov[ix, fixIx] for ix in i]
+
     pos_def = np.linalg.slogdet(Cov)
     if pos_def[0] == 1.0:
         color = (0, 0, beta)
     else:
         color = (beta, 0., 0.)
 
-    plt.plot(i, CovArray, label=r"$\beta = ${0}".format(beta), color=color)
+    plt.plot(i, CovArray,
+             label=r"$\beta = ${0:.2f}, ".format(beta) +
+             r"$\rho$ = " + "{0:.2f}".format(normalized_corr(beta, coords)),
+             color=color)
     plt.xlabel("Cov index")
     plt.ylabel("Cov[i, {0}] value".format(fixIx))
 
     return
 
 
+def normalized_corr(beta, features):
+    extent = isotropic_norm(features)
+    assert extent > 0, "extent of the features has to be > 0"
+    return np.exp(-4. * extent * beta)
+
+
+def isotropic_norm(features):
+    """ normalized the features appropriately to reflect the features are
+    isotropic, i.e. normalize according to the norm of both dimensions,
+    not dimension by dimension
+
+    :param features: 2D numpy array
+    :return: float, the normalization
+    """
+    return np.sqrt(np.dot(features.max(0) - features.min(0),
+                          features.max(0) - features.min(0)))
+
+
 if __name__ == "__main__":
-    grid_rng = (0., 10.)
-    spacing = 1.
+    # grid_rng = (0., 10.)
+    # spacing = 1.
     betas = np.arange(0.1, 1.0, 0.1)  # what's a reasonable range?
 
     coords = np.array([[1., i] for i in np.arange(0, 1, 0.1)])
     # coords = make_grid(grid_rng, spacing)
     # coords = normalize_2D_data(coords)
-
-    plotExpSqCov(coords, plot=True, save=False)
-
     # coords = np.arange(grid_extent, step=spacing)
 
     Cov = {}
+    Cov["ExpSquaredKernel"] = [plotExpSqCov(coords, plot2=True, save=False,
+                                            beta=beta)
+                               for beta in betas]
     Cov["KappaKappa"] = [plotDerivCov(KappaKappaExpSquaredKernel,
                                       coords, beta=beta)
                          for beta in betas]
@@ -128,7 +158,7 @@ if __name__ == "__main__":
 
     for k in Cov.keys():
         for i in range(len(betas)):
-            plotFixedCov(Cov[k][i], betas[i])
+            plotFixedCov(Cov[k][i], betas[i], coords)
             plt.legend(loc='best', frameon=False, fontsize=10)
         plt.title(k)
         plt.savefig("./plots/" + k + "_Cov.png", bbox_inches='tight')
