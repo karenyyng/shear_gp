@@ -79,7 +79,7 @@ def plotCovMatrix(Cov, kernel_name):
     plt.close()
 
 
-def plotFixedCov(Cov, beta, features):
+def plotFixedCov(Cov, beta, coords):
     """
     :param Cov: dictionary of np arrays
     :param pos_definiteness: dictionary of tuples
@@ -126,7 +126,9 @@ def isotropic_norm(features):
 if __name__ == "__main__":
     # grid_rng = (0., 10.)
     # spacing = 1.
-    betas = np.arange(0.1, 1.0, 0.1)  # what's a reasonable range?
+
+    # should reverse calculate a reasonable range
+    betas = np.arange(0.1, 1.0, 0.1)
 
     coords = np.array([[1., i] for i in np.arange(0, 1, 0.1)])
     # coords = make_grid(grid_rng, spacing)
@@ -163,5 +165,11 @@ if __name__ == "__main__":
         plt.title(k)
         plt.savefig("./plots/" + k + "_Cov.png", bbox_inches='tight')
         plt.close()
+
+    k = "KappaKappa"
+    plotFixedCov(Cov[k][4], betas[4], coords)
+    plt.title(k + ", beta = {0}".format(betas[4]))
+    plt.savefig("./plots/" + k + "check_Cov.png", bbox_inches='tight')
+
 
 
