@@ -50,7 +50,7 @@ class KernelDerivatives(ExpSquaredKernel):
     def __X__(self, m, n, spat_ix):
         return self.__coords__[m, spat_ix] - self.__coords__[n, spat_ix]
 
-    def __termA__(self, ix, m, n, debug=False):
+    def __termA__(self, ix, m, n):
         """
         # the constructor also needs the coordinates
         Compute term 1 in equation (27) without leading factors of $\beta^4$
@@ -68,15 +68,13 @@ class KernelDerivatives(ExpSquaredKernel):
             X_i X_j X_h X_k
         """
         term = 1.
-        if debug:
-            print "indices of term A = {0}".format(ix)
-            print "type of indices of term A = ", len(ix)
+
         for i in ix:
             term *= self.__X__(m, n, i)
 
         return term
 
-    def __termB__(self, coords, ix, m, n, metric, debug=False):
+    def __termB__(self, ix, m, n, metric):
         """
         Compute term 2 in equation (27) without leading factors of $\beta^3$
 
@@ -99,10 +97,6 @@ class KernelDerivatives(ExpSquaredKernel):
         .. math:
             X_a X_b D_{cd} \delta_{cd}
         """
-        if debug is True:
-            print "metric = {0}".format(metric)
-            print "indices of term B = {0}".format(ix)
-
         if ix[2] != ix[3]:
             return 0
 
@@ -110,7 +104,7 @@ class KernelDerivatives(ExpSquaredKernel):
             self.__X__(m, n, ix[1]) * \
             metric[ix[2]]
 
-    def __termC__(self, coords, ix, metric, debug=False):
+    def __termC__(self, ix, metric):
         """
         Compute term 3 in equation (27) without leading factor of $\beta^2$
 
@@ -127,10 +121,6 @@ class KernelDerivatives(ExpSquaredKernel):
         .. math:
             D_{ab} D_{cd} \delta_{ab} \delta_{cd}
         """
-        if debug:
-            print "metric = {0}".format(metric)
-            print "indices of term C = {0}".format(ix)
-
         if ix[0] != ix[1]:
             return 0
 
@@ -139,22 +129,18 @@ class KernelDerivatives(ExpSquaredKernel):
 
         return metric[ix[2]] * metric[ix[0]]
 
-    def __Sigma4thDeriv__(self, beta, coords, ix, m, n, metric, debug=False):
+    def __Sigma4thDeriv__(self, ix, m, n, metric):
         """
         Gather the 10 terms for the 4th derivative of each Sigma
         given the ix for each the derivatives are taken w.r.t.
-
-        :params beta: float
-            value of the beta parameter in the ExpSquaredKernel
-
-        :params coords: 2D numpy array
-            with shape (nObs, ndim)
+        i.e. see equation (28) this term is $\Lambda$
 
         :params ix: list of 4 integers
 
         :returns: components of the $\Gamma$ term in eqn (27) without the signs
         :note: see eqn (2) etc. for the factor of 1 / 4.
         """
+        beta = self.__beta__
         assert isinstance(beta, float) or isinstance(beta, int), \
             "beta param has to be a number"
 
@@ -164,24 +150,16 @@ class KernelDerivatives(ExpSquaredKernel):
 
         # combBix is the subscript indices combination for B terms
         for i in range(6):
-            allTermBs += self.__termB__(coords, combBix[i], m, n, metric,
-                                        debug=debug)
+            allTermBs += self.__termB__(combBix[i], m, n, metric)
 
         allTermCs = 0
         combCix = \
             [[ix[i] for i in self.__pairsOfCIndices__[j]] for j in range(3)]
 
         for i in range(3):
-            allTermCs += self.__termC__(coords, combCix[i], metric,
-                                        debug=debug)
+            allTermCs += self.__termC__(combCix[i], metric)
 
-        termA = self.__termA__(coords, ix, m, n)
-
-        if debug:
-            print "combBix is ", combBix
-            print "combCix is ", combCix
-            print "beta is ", beta
-            print "terms are {0}, {1}, {2}".format(termA, allTermBs, allTermCs)
+        termA = self.__termA__(ix, m, n)
 
         return (beta ** 4. * termA -
                 beta ** 3. * allTermBs +
