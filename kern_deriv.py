@@ -22,7 +22,6 @@ import numpy as np
 
 
 class KernelDerivatives(ExpSquaredKernel):
-
     """
     this is intended to be a `abstract` / `virtual` class and
     not to meant to be instantiated directly
@@ -48,10 +47,10 @@ class KernelDerivatives(ExpSquaredKernel):
         self.__pairsOfCIndices__ = \
             [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2]]
 
-    def __X__(self, coords, m, n, spat_ix):
-        return coords[m, spat_ix] - coords[n, spat_ix]
+    def __X__(self, m, n, spat_ix):
+        return self.__coords__[m, spat_ix] - self.__coords__[n, spat_ix]
 
-    def __termA__(self, coords, ix, m, n, debug=False):
+    def __termA__(self, ix, m, n, debug=False):
         """
         # the constructor also needs the coordinates
         Compute term 1 in equation (27) without leading factors of $\beta^4$
@@ -68,13 +67,12 @@ class KernelDerivatives(ExpSquaredKernel):
         .. math:
             X_i X_j X_h X_k
         """
-        term = 1
+        term = 1.
         if debug:
             print "indices of term A = {0}".format(ix)
             print "type of indices of term A = ", len(ix)
-        # print "ix in termA is ", ix
         for i in ix:
-            term *= self.__X__(coords, m, n, i)
+            term *= self.__X__(m, n, i)
 
         return term
 
@@ -241,6 +239,7 @@ class KernelDerivatives(ExpSquaredKernel):
                                                    ix_list[i],
                                                    metric)
 
+        # calling the value method of ExpSquaredKernel
         cov_mat = super(KernelDerivatives, self).value(x1, x2)
 
         # return the Schur product of the matrix
@@ -569,3 +568,21 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     def plot1(self, spacing, save=False, fig="./plots",
               name='Gamma1Gamma2ExpSquaredKernel'):
         self.plot_kernel_mtx(spacing, save=save, fig=fig, name=name)
+
+
+def normalized_corr(beta, features):
+    extent = isotropic_norm(features)
+    assert extent > 0, "extent of the features has to be > 0"
+    return np.exp(-4. * extent * beta)
+
+
+def isotropic_norm(features):
+    """ normalized the features appropriately to reflect the features are
+    isotropic, i.e. normalize according to the norm of both dimensions,
+    not dimension by dimension
+
+    :param features: 2D numpy array
+    :return: float, the normalization
+    """
+    return np.sqrt(np.dot(features.max(0) - features.min(0),
+                          features.max(0) - features.min(0)))

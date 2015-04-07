@@ -2,6 +2,14 @@ Check out our [Trello project
 page](https://trello.com/b/gvclhujL/shear-gp) for more info.
 
 
+# tests 
+You can use `pytest` to run the tests
+```
+$ py.test -v 
+```
+this automatically detects all the files with `test_` prefixes.
+
+
 # prerequisites 
 See `py_package_dependencies.txt` for prerequisite packages to run this code.
 Here is a

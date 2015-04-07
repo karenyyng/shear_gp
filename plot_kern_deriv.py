@@ -105,22 +105,6 @@ def plotFixedCov(Cov, beta, coords):
     return
 
 
-def normalized_corr(beta, features):
-    extent = isotropic_norm(features)
-    assert extent > 0, "extent of the features has to be > 0"
-    return np.exp(-4. * extent * beta)
-
-
-def isotropic_norm(features):
-    """ normalized the features appropriately to reflect the features are
-    isotropic, i.e. normalize according to the norm of both dimensions,
-    not dimension by dimension
-
-    :param features: 2D numpy array
-    :return: float, the normalization
-    """
-    return np.sqrt(np.dot(features.max(0) - features.min(0),
-                          features.max(0) - features.min(0)))
 
 
 if __name__ == "__main__":
