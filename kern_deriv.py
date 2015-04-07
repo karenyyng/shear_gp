@@ -165,7 +165,7 @@ class KernelDerivatives(ExpSquaredKernel):
                 beta ** 3. * allTermBs +
                 beta ** 2. * allTermCs) / 4.
 
-    def __compute_Sigma4derv_matrix__(self, x, par, ix, metric, debug=False):
+    def __compute_Sigma4derv_matrix__(self, ix, metric, debug=False):
         """
         Compute the coefficients due to the derivatives - this
         should result in a symmetric N x N matrix where N is the
@@ -177,8 +177,7 @@ class KernelDerivatives(ExpSquaredKernel):
         :params ix: list of 4 integers to indicate derivative subscripts
         """
 
-        return np.array([[self.__Sigma4thDeriv__(par, x, ix, m, n, metric,
-                                                 debug=debug)
+        return np.array([[self.__Sigma4thDeriv__(ix, m, n, metric)
                          for m in range(x.shape[0])]
                          for n in range(x.shape[0])
                          ])
