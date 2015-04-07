@@ -106,8 +106,8 @@ class KernelDerivatives(ExpSquaredKernel):
         if ix[2] != ix[3]:
             return 0
 
-        return self.__X__(coords, m, n, ix[0]) * \
-            self.__X__(coords, m, n, ix[1]) * \
+        return self.__X__(m, n, ix[0]) * \
+            self.__X__(m, n, ix[1]) * \
             metric[ix[2]]
 
     def __termC__(self, coords, ix, metric, debug=False):
@@ -269,7 +269,6 @@ class KernelDerivatives(ExpSquaredKernel):
 
 
 class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
-
     """
     Inherits from the ExpSquaredKernel class and multiplies it with appropriate
     coefficients
@@ -307,9 +306,9 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
-        self.__kernel__ = self.value(coords)
-        print "Kernel is {0}".format(self.__kernel__)
-        print "stored version of pars in George is {0}".format(self.pars)
+        # self.__kernel__ = self.value(coords)
+        # print "Kernel is {0}".format(self.__kernel__)
+        # print "stored version of pars in George is {0}".format(self.pars)
 
     def value(self, x1, x2=None, param=None):
         """ this won't be called by George betaectly """
@@ -359,7 +358,7 @@ class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, -1, 1, -1]
 
-        self.__kernel__ = self.value(self.__coords__)
+        # self.__kernel__ = self.value(self.__coords__)
 
     def value(self, x1, x2=None):
         return super(KappaGamma1ExpSquaredKernel, self).value(
@@ -410,7 +409,7 @@ class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
-        self.__kernel__ = self.value(self.__coords__)
+        # self.__kernel__ = self.value(self.__coords__)
 
     def value(self, x1, x2=None):
         return super(
@@ -458,7 +457,7 @@ class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
         self.__beta__ = beta
         self.__coords__ = coords
 
-        self.__kernel__ = self.value(self.__coords__)
+        # self.__kernel__ = self.value(self.__coords__)
 
     def value(self, x1, x2=None):
         return super(Gamma1Gamma1ExpSquaredKernel, self).value(
@@ -505,7 +504,7 @@ class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, 1, 1]
 
-        self.__kernel__ = self.value(coords)
+        # self.__kernel__ = self.value(coords)
 
     def value(self, x1, x2=None):
         return super(
@@ -557,7 +556,7 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, 1, -1, -1]
 
-        self.__kernel__ = self.value(coords)
+        # self.__kernel__ = self.value(coords)
 
     def value(self, x1, x2=None):
         return super(Gamma1Gamma2ExpSquaredKernel, self).value(

@@ -5,9 +5,9 @@ page](https://trello.com/b/gvclhujL/shear-gp) for more info.
 # tests 
 You can use `pytest` to run the tests
 ```
-$ py.test -v 
+$ py.test -v test_kern_deriv.py
 ```
-this automatically detects all the files with `test_` prefixes.
+this automatically detects all the files and test functions with `test_` prefixes.
 
 
 # prerequisites 
