@@ -37,6 +37,7 @@ class KernelDerivatives(ExpSquaredKernel):
                                                dim=-dim, extra=[])
 
         # pick 2 pairs from 4 objects so we have 4C2 combinations
+        # within each pair, it doesn't matter if we swap the indices
         self.__pairsOfBIndices__ = \
             [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2],
              [2, 3, 0, 1], [1, 3, 0, 2], [1, 2, 0, 3]]
@@ -129,6 +130,12 @@ class KernelDerivatives(ExpSquaredKernel):
 
         return metric[ix[2]] * metric[ix[0]]
 
+    def __comb_B_ix__(self, ix):
+        return [[ix[i] for i in self.__pairsOfBIndices__[j]] for j in range(6)]
+
+    def __comb_C_ix__(self, ix):
+        return [[ix[i] for i in self.__pairsOfCIndices__[j]] for j in range(3)]
+
     def __Sigma4thDeriv__(self, ix, m, n, metric):
         """
         Gather the 10 terms for the 4th derivative of each Sigma
@@ -145,16 +152,14 @@ class KernelDerivatives(ExpSquaredKernel):
             "beta param has to be a number"
 
         allTermBs = 0
-        combBix = \
-            [[ix[i] for i in self.__pairsOfBIndices__[j]] for j in range(6)]
+        combBix = self.__comb_B_ix__(ix)
 
         # combBix is the subscript indices combination for B terms
         for i in range(6):
             allTermBs += self.__termB__(combBix[i], m, n, metric)
 
         allTermCs = 0
-        combCix = \
-            [[ix[i] for i in self.__pairsOfCIndices__[j]] for j in range(3)]
+        combCix = self.__comb_C_ix__(ix)
 
         for i in range(3):
             allTermCs += self.__termC__(combCix[i], metric)
