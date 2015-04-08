@@ -170,7 +170,7 @@ class KernelDerivatives(ExpSquaredKernel):
                 beta ** 3. * allTermBs +
                 beta ** 2. * allTermCs) / 4.
 
-    def __compute_Sigma4derv_matrix__(self, ix, metric, debug=False):
+    def __compute_Sigma4derv_matrix__(self, ix, metric):
         """
         Compute the coefficients due to the derivatives - this
         should result in a symmetric N x N matrix where N is the
@@ -178,10 +178,10 @@ class KernelDerivatives(ExpSquaredKernel):
 
         moved from KappaKappaExpSquaredKernel to here
 
-        :params par: theta_2^2 according to George parametrization
-        :params ix: list of 4 integers to indicate derivative subscripts
+        :param ix: list of 4 integers to indicate derivative subscripts
+        :param metric: list of floats that has same length as feature dimension
         """
-
+        x = self.__coords__
         return np.array([[self.__Sigma4thDeriv__(ix, m, n, metric)
                          for m in range(x.shape[0])]
                          for n in range(x.shape[0])
@@ -217,8 +217,7 @@ class KernelDerivatives(ExpSquaredKernel):
             # new implementation this should call the KernelDerivatives
             # method
             mat += terms_signs[i] * \
-                self.__compute_Sigma4derv_matrix__(x1, pars,
-                                                   ix_list[i],
+                self.__compute_Sigma4derv_matrix__(ix_list[i],
                                                    metric)
 
         # calling the value method of ExpSquaredKernel

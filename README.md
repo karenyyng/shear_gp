@@ -9,6 +9,13 @@ $ py.test -v test_kern_deriv.py
 ```
 this automatically detects all the files and test functions with `test_` prefixes.
 
+If you need to debug the tests / code, instead run:
+```
+$ py.test --pdb -v test_kern_deriv.py
+```
+to trigger the python debugger `pdb` post mortem.
+
+
 
 # prerequisites 
 See `py_package_dependencies.txt` for prerequisite packages to run this code.
