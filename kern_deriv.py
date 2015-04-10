@@ -389,12 +389,9 @@ class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         # self.__kernel__ = self.value(self.__coords__)
 
-    def value(self, x1, x2=None):
+    def value(self, x2=None):
         return super(
-            KappaGamma2ExpSquaredKernel, self).value(
-            x1, ix_list=self.__ix_list__,
-            pars=self.__beta__, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=x2)
+            KappaGamma2ExpSquaredKernel, self).value(x2=x2)
 
     def plot1(self, spacing, save=False, fig="./plots",
               name="KappaGamma2ExpSquaredKernel"):
@@ -481,12 +478,9 @@ class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         # self.__kernel__ = self.value(coords)
 
-    def value(self, x1, x2=None):
+    def value(self, x2=None):
         return super(
-            Gamma2Gamma2ExpSquaredKernel, self).value(
-            x1, ix_list=self.__ix_list__,
-            pars=self.__beta__, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=x2)
+            Gamma2Gamma2ExpSquaredKernel, self).value(x2=x2)
 
     def plot1(self, spacing, save=False, fig="./plots",
               name='Gamma2Gamma2ExpSquaredKernel'):
@@ -533,11 +527,8 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         # self.__kernel__ = self.value(coords)
 
-    def value(self, x1, x2=None):
-        return super(Gamma1Gamma2ExpSquaredKernel, self).value(
-            x1, ix_list=self.__ix_list__,
-            pars=self.__beta__, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=x2)
+    def value(self, x2=None):
+        return super(Gamma1Gamma2ExpSquaredKernel, self).value(x2=x2)
 
     def plot1(self, spacing, save=False, fig="./plots",
               name='Gamma1Gamma2ExpSquaredKernel'):
