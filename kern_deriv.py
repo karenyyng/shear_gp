@@ -437,11 +437,8 @@ class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         # self.__kernel__ = self.value(self.__coords__)
 
-    def value(self, x1, x2=None):
-        return super(Gamma1Gamma1ExpSquaredKernel, self).value(
-            x1, ix_list=self.__ix_list__,
-            pars=self.__beta__, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=x2)
+    def value(self, x2=None):
+        return super(Gamma1Gamma1ExpSquaredKernel, self).value(x2=x2)
 
     def plot1(self, spacing, save=False, fig="./plots",
               name='Gamma1Gamma1ExpSquaredKernel'):
