@@ -7,8 +7,6 @@ for the exact mathematical expressions
 Read https://github.com/dfm/george/blob/master/george/kernels.py
 for how the kernels are implemented in george
 
-:stability: untested but runs without errors
-
 :warning: in George, `y` refers to the variable to be predicted
     in my notes, `y` refers to an alternative way of calling the spatial
     location of the data points, and `psi` refers to the variable to
@@ -187,8 +185,7 @@ class KernelDerivatives(ExpSquaredKernel):
                          for n in range(x.shape[0])
                          ])
 
-    def value(self, x1, ix_list, pars, terms_signs, metric, x2=None,
-              debug=False):
+    def value(self, x2=None, debug=False):
         """
         This child class's method overrides the parent class's method
         to multiple our kernel with appropriate coefficients
@@ -206,10 +203,16 @@ class KernelDerivatives(ExpSquaredKernel):
             data, x2 is the test data according to `gp.predict`
 
         """
+        # use parent class, Kernel.value method to parse values
+        x1 = self.__coords__
+        ix_list = self.__ix_list__
+        pars = self.__beta__
+        metric = self.__metric__
+        terms_signs = self.__terms_signs__
+
         if debug:
             print "calling KernelDerivatives class value method"
             print "pars for beta is {0}".format(pars)
-        # use parent class, Kernel.value method to parse values
 
         mat = np.zeros((x1.shape[0], x1.shape[0]))
         for i in range(len(ix_list)):
@@ -291,12 +294,9 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
         # print "Kernel is {0}".format(self.__kernel__)
         # print "stored version of pars in George is {0}".format(self.pars)
 
-    def value(self, x1, x2=None, param=None):
-        """ this won't be called by George betaectly """
-        return super(KappaKappaExpSquaredKernel, self).value(
-            x1, ix_list=self.__ix_list__,
-            pars=self.__beta__, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=x2)
+    def value(self, x2=None, param=None):
+        """this won't be called by George correctly"""
+        return super(KappaKappaExpSquaredKernel, self).value(x2=x2)
 
     def plot1(self, spacing, save=False, fig="./plots",
               name='KappaKappaExpSquaredKernel'):
@@ -341,11 +341,8 @@ class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         # self.__kernel__ = self.value(self.__coords__)
 
-    def value(self, x1, x2=None):
-        return super(KappaGamma1ExpSquaredKernel, self).value(
-            x1, ix_list=self.__ix_list__,
-            pars=self.__beta__, terms_signs=self.__terms_signs__,
-            metric=self.__metric__, x2=x2)
+    def value(self, x2=None):
+        return super(KappaGamma1ExpSquaredKernel, self).value(x2=x2)
 
     def plot1(self, spacing, save=False, fig="./plots",
               name='KappaGamma1ExpSquaredKernel'):
