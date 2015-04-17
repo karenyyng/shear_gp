@@ -20,26 +20,40 @@ from plot_kern_deriv import plotDerivCov
 # --------------------- starting to test Cython Kernel values --------
 
 
-def test_Cython_kappakappa_2_coords():
+def test_Cython_kappakappa_2_coords_vary_beta():
+    betas = np.arange(0.1, 1.0, 0.1)
     coords = np.array([[1., 2.], [4., 7.]])
     beta = 1.
 
-    cythonGP = george.GP(KappaKappaExpSquaredKernel(beta, ndim=2L))
-    cythonCov = cythonGP.get_matrix(coords)
+    cythonGPs = [george.GP(KappaKappaExpSquaredKernel(beta, ndim=2L))
+                 for beta in betas]
+    cythonCov = [cythonGP.get_matrix(coords)
+                 for cythonGP in cythonGPs]
 
-    pythonCov = plotDerivCov(KKker, coords, beta)
-    assert np.array_equal(cythonCov, pythonCov)
-    return cythonCov
+    pythonCov = [plotDerivCov(KKker, coords, beta)
+                 for beta in betas]
+
+    for i in range(len(betas)):
+        assert np.array_equal(cythonCov[i], pythonCov[i])
+
+    return
 
 
-def test_Cython_kappakapp_10_coords():
-    beta = 1.
+def test_Cython_kappakappa_10_coords_vary_beta():
+    betas = np.arange(0.1, 1.0, 0.1)
     coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
-    cythonGP = george.GP(KappaKappaExpSquaredKernel(beta, ndim=2L))
-    cythonCov = cythonGP.get_matrix(coords)
 
-    pythonCov = plotDerivCov(KKker, coords, beta)
-    assert np.array_equal(cythonCov, pythonCov)
+    cythonGPs = [george.GP(KappaKappaExpSquaredKernel(beta, ndim=2L))
+                 for beta in betas]
+    cythonCov = [cythonGP.get_matrix(coords)
+                 for cythonGP in cythonGPs]
+
+    pythonCov = [plotDerivCov(KKker, coords, beta)
+                 for beta in betas]
+
+    for i in range(len(betas)):
+        assert np.array_equal(cythonCov[i], pythonCov[i])
+
 
 if __name__ == "__main__":
     cythonCov = test_Cython_kappakappa_2_coords()
