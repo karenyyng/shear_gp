@@ -44,6 +44,11 @@ def plotDerivCov(kernel, coords, beta=1., plot=False, debug=False):
     return k.value(coords)
 
 
+def get_Cython_kernels(k, coords, beta=1):
+    gp = george.GP(k(beta, coords, ndim=2L))
+    return gp.get_matrix(coords)
+
+
 def plotExpSqCov(coords, plot1=False, plot2=True, save=False, beta=1.,
                  lambDa=1.):
     # coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
@@ -99,12 +104,10 @@ def plotFixedCov(Cov, beta, coords):
              label=r"$\beta = ${0:.2f}, ".format(beta) +
              r"$\rho$ = " + "{0:.2f}".format(normalized_corr(beta, coords)),
              color=color)
-    plt.xlabel("Cov index")
+    plt.xlabel("i")
     plt.ylabel("Cov[i, {0}] value".format(fixIx))
 
     return
-
-
 
 
 if __name__ == "__main__":
@@ -112,7 +115,7 @@ if __name__ == "__main__":
     # spacing = 1.
 
     # should reverse calculate a reasonable range
-    betas = np.arange(0.1, 1.0, 0.1)
+    betas = np.arange(0.1, 1.1, 0.1)
 
     coords = np.array([[1., i] for i in np.arange(0, 1, 0.1)])
     # coords = make_grid(grid_rng, spacing)
@@ -120,6 +123,8 @@ if __name__ == "__main__":
     # coords = np.arange(grid_extent, step=spacing)
 
     Cov = {}
+
+
     Cov["ExpSquaredKernel"] = [plotExpSqCov(coords, plot2=True, save=False,
                                             beta=beta)
                                for beta in betas]
@@ -149,11 +154,6 @@ if __name__ == "__main__":
         plt.title(k)
         plt.savefig("./plots/" + k + "_Cov.png", bbox_inches='tight')
         plt.close()
-
-    k = "KappaKappa"
-    plotFixedCov(Cov[k][4], betas[4], coords)
-    plt.title(k + ", beta = {0}".format(betas[4]))
-    plt.savefig("./plots/" + k + "check_Cov.png", bbox_inches='tight')
 
 
 
