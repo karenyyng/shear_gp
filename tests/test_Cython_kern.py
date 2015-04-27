@@ -25,7 +25,7 @@ def test_Cython_kappakappa_2_coords_fixed_beta():
     beta = 1.0
     ndim = 2L
     coords = np.array([[1., 2.], [4., 7.]])
-    cythonGP = george.GP(KappaKappaExpSquaredKernel(beta * np.ones(ndim),
+    cythonGP = george.GP(1.0 * KappaKappaExpSquaredKernel(beta * np.ones(ndim),
                                                     ndim=ndim))
     cythonCov = cythonGP.get_matrix(coords)
     pythonCov = plotDerivCov(KKker, coords, beta)
@@ -49,7 +49,7 @@ def test_Cython_kappakappa_2_coords_vary_beta():
                  for beta in betas]
 
     for i in range(len(betas)):
-        assert np.array_equal(cythonCov[i], pythonCov[i])
+        assert np.allclose(cythonCov[i], pythonCov[i])
 
     return cythonCov
 
@@ -71,7 +71,7 @@ def test_Cython_kappakappa_10_coords_vary_beta():
     # print("pythonCov:", pythonCov[0])
 
     for i in range(len(betas)):
-        assert np.array_equal(cythonCov[i], pythonCov[i])
+        assert np.allclose(cythonCov[i], pythonCov[i])
 
 
 def test_Cython_sqExp_10_coords_vary_beta():
