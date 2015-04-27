@@ -21,12 +21,26 @@ from plot_kern_deriv import plotDerivCov, plotExpSqCov
 # --------------------- starting to test Cython Kernel values --------
 
 
+def test_Cython_kappakappa_2_coords_fixed_beta():
+    beta = 1.0
+    ndim = 2L
+    coords = np.array([[1., 2.], [4., 7.]])
+    cythonGP = george.GP(KappaKappaExpSquaredKernel(beta * np.ones(ndim),
+                                                    ndim=ndim))
+    cythonCov = cythonGP.get_matrix(coords)
+    pythonCov = plotDerivCov(KKker, coords, beta)
+
+    assert np.array_equal(cythonCov, pythonCov)
+    return
+
+
 def test_Cython_kappakappa_2_coords_vary_beta():
     betas = np.arange(0.1, 1.0, 0.1)
     coords = np.array([[1., 2.], [4., 7.]])
-    beta = 1.
+    ndim = 2L
 
-    cythonGPs = [george.GP(KappaKappaExpSquaredKernel(beta, ndim=2L))
+    cythonGPs = [george.GP(KappaKappaExpSquaredKernel(beta * np.ones(ndim),
+                                                      ndim=ndim))
                  for beta in betas]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
@@ -37,14 +51,16 @@ def test_Cython_kappakappa_2_coords_vary_beta():
     for i in range(len(betas)):
         assert np.array_equal(cythonCov[i], pythonCov[i])
 
-    return
+    return cythonCov
 
 
 def test_Cython_kappakappa_10_coords_vary_beta():
     betas = np.arange(0.1, 1.0, 0.1)
     coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    ndim = 2L
 
-    cythonGPs = [george.GP(KappaKappaExpSquaredKernel(beta, ndim=2L))
+    cythonGPs = [george.GP(KappaKappaExpSquaredKernel(beta * np.ones(ndim),
+                                                      ndim=ndim))
                  for beta in betas]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
@@ -75,4 +91,5 @@ def test_Cython_sqExp_10_coords_vary_beta():
 
 
 if __name__ == "__main__":
-    cythonCov = test_Cython_kappakappa_2_coords()
+    cythonCov1 = test_Cython_kappakappa_2_coords_vary_beta()
+    cythonCov2 = test_Cython_kappakappa_10_coords_vary_beta()
