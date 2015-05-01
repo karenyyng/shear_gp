@@ -30,6 +30,9 @@ class KernelDerivatives(ExpSquaredKernel):
     """
 
     def __init__(self, beta, ndim=2, dim=-1, extra=[], rMetric=1.):
+        # fix my misunderstanding of George parameterization
+        beta = 1. / beta
+
         # the following corresponds to Kernel.__init__
         super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
                                                dim=-dim, extra=[])
@@ -265,9 +268,9 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     """
 
     def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
+        beta = 1. / beta
         super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
                                                dim=-dim, extra=[])
-        self.__beta__ = beta
 
         # this should call KernelDerivatives.__init__()
         super(KappaKappaExpSquaredKernel, self).__init__(beta, ndim=ndim,
@@ -278,6 +281,7 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
             "needs numpy array of shape (n_obs, 2)"
 
         self.__coords__ = coords
+        self.__beta__ = beta
 
         if isinstance(rMetric, float) or isinstance(rMetric, int):
             self.__metric__ = rMetric * np.ones(ndim)
@@ -314,6 +318,7 @@ class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     """
 
     def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
+        beta = 1. / beta
         super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
@@ -363,6 +368,7 @@ class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     """
 
     def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
+        beta = 1. / beta
         super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
@@ -408,6 +414,7 @@ class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     """
 
     def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
+        beta = 1. / beta
         super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
@@ -452,6 +459,7 @@ class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     """
 
     def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
+        beta = 1. / beta
         super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
@@ -501,6 +509,7 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     """
 
     def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
+        beta = 1. / beta
         super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
                                                dim=-dim, extra=[])
 

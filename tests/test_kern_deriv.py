@@ -19,11 +19,7 @@ from kern_deriv import (KappaKappaExpSquaredKernel,
 
 # --------create fixtures ----------------------------
 
-@pytest.fixture()
-def two_coords_test_data():
-    # only use fixtures if you foresee having to share test data across
-    # different tests
-    beta = 1.
+def two_coords_test_data(beta=1.0):
     return beta, np.array([[1., 2.], [4., 7.]])
 
 
@@ -44,7 +40,7 @@ def test_normalized_corr():
     assert normalized_corr(2., coords) - np.exp(-4. * 1. * 2.) < 1e-10
 
 
-# --------- testing the kernels for non-kernel specific things -------------
+# --------- testing the kernels for non-kernel specific things -----
 @pytest.fixture(scope="class")
 def kernels():
     beta, coords = two_coords_test_data()
@@ -61,7 +57,25 @@ def kernels():
     return ker
 
 
-def test__X__(kernels):
+@pytest.fixture(scope="class")
+def kernels_inv_beta_equals_pt_25():
+    beta, coords = two_coords_test_data(0.25)
+    print(beta)
+    ker = {}
+    ker["kappakappa"] = KappaKappaExpSquaredKernel(beta, coords, ndim=2)
+    ker["kappagamma1"] = KappaGamma1ExpSquaredKernel(beta, coords, ndim=2)
+    ker["kappagamma2"] = KappaGamma2ExpSquaredKernel(beta, coords, ndim=2)
+    ker["gamma1gamma1"] = \
+        Gamma1Gamma1ExpSquaredKernel(beta, coords, ndim=2)
+    ker["gamma1gamma2"] = \
+        Gamma1Gamma2ExpSquaredKernel(beta, coords, ndim=2)
+    ker["gamma2gamma2"] = \
+        Gamma2Gamma2ExpSquaredKernel(beta, coords, ndim=2)
+    return ker
+
+
+def test__X__(kernels_inv_beta_equals_pt_25):
+    kernels = kernels_inv_beta_equals_pt_25
     for k, v in kernels.iteritems():
         # __X__(m, n, ix)
         assert v.__X__(1, 0, 0) == 3.
@@ -157,6 +171,35 @@ def test_Sigma4thDeriv(kernels):
             (375 - 3 * 15 + 0) / 4.
 
 
+def test_Sigma4thDeriv_pt_25(kernels_inv_beta_equals_pt_25):
+    kernels = kernels_inv_beta_equals_pt_25
+    # test individual elements of the kernel matrix
+    for k, v in kernels.iteritems():
+        assert v.__Sigma4thDeriv__([1, 1, 1, 1], 1, 0, [1, 1]) == \
+            (4 ** 4 * 625 - 4 ** 3 * 6. * 25 + 4 ** 2 * 3 * 1) / 4.
+
+        # test the metric
+        assert v.__Sigma4thDeriv__([1, 1, 1, 1], 1, 0, [1, 2]) == \
+            (4 ** 4. * 625 - 4 ** 3 * 6. * 25 * 2 + 4 ** 2. *  3 * 4) / 4.
+
+        # test different indices
+        assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) - \
+            (4 ** 4. * 225 - 4 ** 3. * (25 - 9)  # 2 of the 6 terms are nonzero
+             + 4.** 2. * 1) / 4. < 1e-10  # 1 of the 3 terms are nonzero
+
+        # assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) == \
+        #     v.__Sigma4thDeriv__([0, 0, 1, 1], 1, 0, [1, 1])
+
+        # assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) - \
+        #     (225. - (25 - 9) + 1) / 4. < 1e-10
+
+        # assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) == \
+        #     v.__Sigma4thDeriv__([0, 1, 0, 1], 1, 0, [1, 1])
+
+        # assert v.__Sigma4thDeriv__([1, 1, 1, 0], 1, 0, [1, 1]) == \
+        #     (375 - 3 * 15 + 0) / 4.
+
+
 def test_compute_Sigma4derv_matrix(kernels):
     # tests most elements of the kernel matrix for 1 sets of 4 indices
     for k, v in kernels.iteritems():
@@ -211,6 +254,7 @@ def test_compute_Sigma4derv_matrix(kernels):
         ker = v.__compute_Sigma4derv_matrix__([0, 1, 1, 1], [1, 1])
         assert ker[1, 0] == ((5 ** 3 * 3) - (5 * 3 * 3)) / 4.
 
+
 # -----------kernel dependent tests! -------------------------------
 def test_kappakappa_value(kernels):
     k = kernels["kappakappa"]
@@ -233,7 +277,6 @@ def test_kappakappa_value(kernels):
 
     assert ker_val[0, 1] == ker_val[1, 0]
 
-    print("kappakappa cov = ", ker_val)
     return ker_val
 
 
@@ -323,9 +366,12 @@ def test_gamma2gamma2_value(kernels):
     assert ker_val[0, 1] == ker_val[1, 0]
 
 
+def test_inv_beta():
+    return
 
-if __name__ == "__main__":
-    kappakappaCov = test_kappakappa_value(kernels())
+
+# if __name__ == "__main__":
+#     kappakappaCov = test_kappakappa_value(kernels())
 #
 # def test_positive_definiteness():
 #     assert np.linalg.slogdet()[0] == 1
