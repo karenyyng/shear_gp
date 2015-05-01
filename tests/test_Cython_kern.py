@@ -39,8 +39,8 @@ def test_Cython_kappakappa_2_coords_vary_beta():
     coords = np.array([[1., 2.], [4., 7.]])
     ndim = 2L
 
-    cythonGPs = [george.GP(KappaKappaExpSquaredKernel(beta * np.ones(ndim),
-                                                      ndim=ndim))
+    cythonGPs = [george.GP(1.0 * KappaKappaExpSquaredKernel(beta * np.ones(ndim),
+                                                            ndim=ndim))
                  for beta in betas]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
