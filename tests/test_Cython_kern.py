@@ -59,7 +59,8 @@ def test_Cython_kappakappa_10_coords_vary_beta():
     coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
     ndim = 2L
 
-    cythonGPs = [george.GP(KappaKappaExpSquaredKernel(beta * np.ones(ndim),
+    cythonGPs = [george.GP(1.0 * KappaKappaExpSquaredKernel(beta *
+                                                            np.ones(ndim),
                                                       ndim=ndim))
                  for beta in betas]
     cythonCov = [cythonGP.get_matrix(coords)
@@ -79,7 +80,8 @@ def test_Cython_sqExp_10_coords_vary_beta():
     betas = np.arange(0.1, 1.0, 0.1)
     coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
 
-    cythonGPs = [george.GP(ExpSquaredKernel(beta * np.ones(ndim), ndim=ndim))
+    cythonGPs = [george.GP(1.0 * ExpSquaredKernel(beta * np.ones(ndim),
+                                                  ndim=ndim))
                  for beta in betas]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
@@ -89,6 +91,26 @@ def test_Cython_sqExp_10_coords_vary_beta():
 
     for i in range(len(betas)):
         assert np.array_equal(cythonCov[i], pythonCov[i])
+
+
+
+def test_Cython_sqExp_10_coords_vary_lambda():
+    ndim = 2L
+    lambDa = 0.5
+    betas = np.arange(0.1, 1.0, 0.1)
+    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+
+    cythonGPs = [george.GP(lambDa * ExpSquaredKernel(beta * np.ones(ndim),
+                                                     ndim=ndim))
+                 for beta in betas]
+    cythonCov = [cythonGP.get_matrix(coords)
+                 for cythonGP in cythonGPs]
+
+    pythonCov = [plotExpSqCov(coords, beta=beta, plot2=False)
+                 for beta in betas]
+
+    for i in range(len(betas)):
+        assert np.array_equal(2.0 * cythonCov[i], pythonCov[i])
 
 
 if __name__ == "__main__":
