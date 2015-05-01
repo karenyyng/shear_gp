@@ -176,28 +176,28 @@ def test_Sigma4thDeriv_pt_25(kernels_inv_beta_equals_pt_25):
     # test individual elements of the kernel matrix
     for k, v in kernels.iteritems():
         assert v.__Sigma4thDeriv__([1, 1, 1, 1], 1, 0, [1, 1]) == \
-            (4 ** 4 * 625 - 4 ** 3 * 6. * 25 + 4 ** 2 * 3 * 1) / 4.
+            (.25 ** 4 * 625 - .25 ** 3 * 6. * 25 + .25 ** 2 * 3 * 1) / 4.
 
         # test the metric
         assert v.__Sigma4thDeriv__([1, 1, 1, 1], 1, 0, [1, 2]) == \
-            (4 ** 4. * 625 - 4 ** 3 * 6. * 25 * 2 + 4 ** 2. *  3 * 4) / 4.
+            (.25 ** 4. * 625 - .25 ** 3 * 6. * 25 * 2 + .25 ** 2. *  3 * 4) / 4.
 
         # test different indices
         assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) - \
-            (4 ** 4. * 225 - 4 ** 3. * (25 - 9)  # 2 of the 6 terms are nonzero
-             + 4.** 2. * 1) / 4. < 1e-10  # 1 of the 3 terms are nonzero
+            (.25 ** 4. * 225 - .25 ** 3. * (25 - 9)  # 2 of the 6 terms are nonzero
+             + .25 ** 2. * 1) / 4. < 1e-10  # 1 of the 3 terms are nonzero
 
         assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) == \
             v.__Sigma4thDeriv__([0, 0, 1, 1], 1, 0, [1, 1])
 
         assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) - \
-            (4. ** 4. * 225. - 4 ** 3. * (25 - 9) + 4 ** 2. * 1) / 4. < 1e-10
+            (.25 ** 4. * 225. - .25 ** 3. * (25 - 9) + .25 ** 2. * 1) / 4. < 1e-10
 
         assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) == \
             v.__Sigma4thDeriv__([0, 1, 0, 1], 1, 0, [1, 1])
 
         assert v.__Sigma4thDeriv__([1, 1, 1, 0], 1, 0, [1, 1]) == \
-            (4 ** 4 * 375 - 4 ** 3. * 3 * 15 + 0) / 4.
+            (.25 ** 4 * 375 - .25 ** 3. * 3 * 15 + 0) / 4.
 
 
 def test_compute_Sigma4derv_matrix(kernels):

@@ -75,10 +75,11 @@ def test_Cython_kappakappa_10_coords_vary_beta():
 
 
 def test_Cython_sqExp_10_coords_vary_beta():
+    ndim = 2L
     betas = np.arange(0.1, 1.0, 0.1)
     coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
 
-    cythonGPs = [george.GP(ExpSquaredKernel(beta, ndim=2L))
+    cythonGPs = [george.GP(ExpSquaredKernel(beta * np.ones(ndim), ndim=ndim))
                  for beta in betas]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
