@@ -187,17 +187,17 @@ def test_Sigma4thDeriv_pt_25(kernels_inv_beta_equals_pt_25):
             (4 ** 4. * 225 - 4 ** 3. * (25 - 9)  # 2 of the 6 terms are nonzero
              + 4.** 2. * 1) / 4. < 1e-10  # 1 of the 3 terms are nonzero
 
-        # assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) == \
-        #     v.__Sigma4thDeriv__([0, 0, 1, 1], 1, 0, [1, 1])
+        assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) == \
+            v.__Sigma4thDeriv__([0, 0, 1, 1], 1, 0, [1, 1])
 
-        # assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) - \
-        #     (225. - (25 - 9) + 1) / 4. < 1e-10
+        assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) - \
+            (4. ** 4. * 225. - 4 ** 3. * (25 - 9) + 4 ** 2. * 1) / 4. < 1e-10
 
-        # assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) == \
-        #     v.__Sigma4thDeriv__([0, 1, 0, 1], 1, 0, [1, 1])
+        assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) == \
+            v.__Sigma4thDeriv__([0, 1, 0, 1], 1, 0, [1, 1])
 
-        # assert v.__Sigma4thDeriv__([1, 1, 1, 0], 1, 0, [1, 1]) == \
-        #     (375 - 3 * 15 + 0) / 4.
+        assert v.__Sigma4thDeriv__([1, 1, 1, 0], 1, 0, [1, 1]) == \
+            (4 ** 4 * 375 - 4 ** 3. * 3 * 15 + 0) / 4.
 
 
 def test_compute_Sigma4derv_matrix(kernels):
