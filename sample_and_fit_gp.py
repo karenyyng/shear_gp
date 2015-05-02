@@ -14,6 +14,8 @@ from scipy.special import gamma
 def to_george_param(p):
     """convert lambDa and rho to the parameters of George
     :param p = tuple / list of two parameters
+        first float is inv lambda
+        second float is beta / the metric
     """
     lambDa, rho = p
     assert rho >= 0. and rho <= 1., \
@@ -45,7 +47,7 @@ def make_grid(rng, spacing):
     return np.array([[x, y] for x in xg for y in yg])
 
 
-def generate_2D_data(truth, spacing, rng=(0., 60.), noise_amp=1e-4,
+def generate_2D_data(truth, spacing, kernel, rng=(0., 60.), noise_amp=1e-4,
                      george_param=True):
     """
     :param:
@@ -67,7 +69,7 @@ def generate_2D_data(truth, spacing, rng=(0., 60.), noise_amp=1e-4,
     if george_param is False:
         truth = to_george_param(truth)
 
-    gp = george.GP(truth[0] * kernels.ExpSquaredKernel(truth[1], ndim=2))
+    gp = george.GP(truth[0] * kernel(truth[1], ndim=2))
 
     coords = make_grid(rng, spacing)
 

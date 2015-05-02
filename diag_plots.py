@@ -25,7 +25,7 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, truth=None,
                        fontsize=15, unit="arbitrary unit",
                        truth_label=[r"$\theta_1$", r"$\theta_2^2$"]):
     """
-    Params:
+    params:
         psi_s (numpy array): flattened (1D) version of the psi_s data
         coord_grid (2D np array of floats):
         figside = float, in inches how big the figure should be
@@ -523,3 +523,6 @@ def biweightLoc(z, c=6):
     Cbi = M + np.inner(z - M, (1 - u ** 2) ** 2) / \
         np.sum((1 - u ** 2) ** 2)
     return Cbi
+
+
+

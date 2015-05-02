@@ -318,9 +318,9 @@ x_{m1} - y_{n1} \\ x_{m2} - y_{n2}
 An example of $r^2$ with an Euclidean metric for a pair of data points,
 $\vec{x}_i$ and $\vec{y}_j$ 
 would be:
-\begin{equation*}
+\begin{equation}
 r_{mn}^2 = (x_{m1}-y_{n1})^2 + (x_{m2}-y_{n2})^2 
-\end{equation*}
+\end{equation}
 
 In the following derivations, it is NOT important to keep the $m, n$
 subscripts. We are taking the derivatives w.r.t to the spatial
@@ -492,13 +492,28 @@ Therefore, the covariance function of the 4th spatial derivative has units
 of (inverse length)$^4$ ... which seems like there could be factors of some
 constants missing that should cancel out the units.
 
+## Gradient function for optimizing hyperparameters 
+Gradient function can be thought of  
+\begin{align}
+g(r^2) &= \frac{\partial }{\partial r^2}\Sigma_{,hijk}\\
+&= \Gamma \frac{\partial \Sigma}{\partial r^2} + 
+\frac{\partial \Gamma}{\partial r^2}\Sigma \\ 
+&= -\frac{\beta}{2} \Gamma \Sigma  
+\end{align} 
+This is due to equation (10) showing how 
+\begin{equation*}
+\frac{\partial X_i}{\partial r^2} = 0  
+\end{equation*}
+Or
+\begin{equation*}
+\frac{\partial X_i... X_j}{\partial r^2} = 0. 
+\end{equation*}
+
 ## notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
  indices, e.g. 1122, nor 2211 nor 1111 etc., so
  for small angular separation, only $\kappa$ and $\gamma_1$ has increased
-covariances on the diagonal compared to $\psi_s$  
-
-## Thoughts on implementation 
+covariances on the diagonal compared to $\psi_s$  ## Thoughts on implementation 
 * The metric object should incorporate the $\delta_{ij}$ condition for
  diagonal D, which will kill a lot of terms (sorry for being pedantic
 about including $\delta$ since I don't want myself to forget about it)
