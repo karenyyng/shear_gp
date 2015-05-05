@@ -23,7 +23,7 @@ def comb_zip(ls1, ls2):
 
 def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, truth=None,
                        fontsize=15, unit="arbitrary unit",
-                       truth_label=[r"$\theta_1$", r"$\theta_2^2$"]):
+                       truth_label=[r"$\lambda^{-1}$", r"$\beta$"]):
     """
     params:
         psi_s (numpy array): flattened (1D) version of the psi_s data
@@ -254,7 +254,8 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
     Parameters:
     -----------
         df: dataframe / dictionary / record array
-            that contain the data of all the variables to be plots
+            that contain the posterior values of all the variables to be
+            plotted
         space = float, px of space that is added between subplots
         var_list = list of strings - denotes the column header names
             that needs to be plotted
@@ -308,7 +309,8 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
 
     if isinstance(var_list, dict):
         for var in var_list:
-            assert var in data.columns, "variable to be plotted not in df"
+            assert var in data.columns, "Variable: {0} to ".format(var) + \
+                " be plotted not in df"
 
     if axlabels is None:
         axlabels = {key: key for key in var_list}

@@ -339,8 +339,6 @@ class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__terms_signs__ = [1, -1, 1, -1]
 
-        # self.__kernel__ = self.value(self.__coords__)
-
     def value(self, x2=None):
         return super(KappaGamma1ExpSquaredKernel, self).value(x2=x2)
 

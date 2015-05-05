@@ -69,7 +69,7 @@ def generate_2D_data(truth, spacing, kernel, rng=(0., 60.), noise_amp=1e-4,
     if george_param is False:
         truth = to_george_param(truth)
 
-    gp = george.GP(truth[0] * kernel(truth[1], ndim=2))
+    gp = george.GP(truth[0] * kernel(np.ones(2) * truth[1], ndim=2))
 
     coords = make_grid(rng, spacing)
 
@@ -201,7 +201,7 @@ def lnlike_gp(truth, coord, psi, psi_err=1e-10):
     # when we try to find the hyperparameters
     # psi_err is going to be added to the covariance matrix of the kernel
     # by george
-    if len(psi_err) == 1:
+    if type(psi_err) == float or type(psi_err) == int:
         psi_err = psi_err * np.ones(len(coord))
     gp.compute(coord, psi_err)
     return gp.lnlikelihood(psi - model(p, coord))
@@ -257,10 +257,11 @@ def lnprob_gp(lnHP_truth, coords, psi, psi_err=1e-10,
 
     Params:
     -------
-        lnHP_truth
+    lnHP_truth = tuple of two floats,
+        values are log values of the guessed hyperparameters
+    coords
     """
     ln_hp = lnHP_truth[:2]
-    # p = truth[2:]
     lp = lnprior_gp(ln_hp, lnprior_vals=lnprior_vals)
 
     if not np.isfinite(lp):
