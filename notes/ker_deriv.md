@@ -319,8 +319,9 @@ An example of $r^2$ with an Euclidean metric for a pair of data points,
 $\vec{x}_i$ and $\vec{y}_j$ 
 would be:
 \begin{equation}
-r_{mn}^2 = (x_{m1}-y_{n1})^2 + (x_{m2}-y_{n2})^2 
+r_{mn}^2 = D_11 (x_{m1}-y_{n1})^2 + D_22 (x_{m2}-y_{n2})^2 
 \end{equation}
+assuming diagonal metric.
 
 In the following derivations, it is NOT important to keep the $m, n$
 subscripts. We are taking the derivatives w.r.t to the spatial
@@ -508,6 +509,40 @@ Or
 \begin{equation*}
 \frac{\partial X_i... X_j}{\partial r^2} = 0. 
 \end{equation*}
+
+## Conditional distribution to learn from $\gamma_1$ or $\kappa$
+Our entire covariance matrix with second derivatives give:
+\begin{equation}
+\Sigma_{,hijk} = \left(\begin{array}{ccc}
+\kappa\kappa & \kappa \gamma_1 &  \kappa \gamma_2 \\
+\gamma_1 \kappa & \gamma_1  \gamma_1 & \gamma_1 \gamma_2  \\
+\gamma_2 \kappa & \gamma_2 \gamma_1 & \gamma_2 \gamma_2  
+\end{array}
+\right)
+\end{equation}
+
+with a data vector: 
+\begin{equation}
+\vec{d} = \left(
+\begin{array}{c}
+\vec{x}_{\kappa } \\
+\vec{x}_{\gamma_1} \\
+\vec{x}_{\gamma_2} \\
+\end{array}
+\right)
+\end{equation}
+
+\begin{equation}
+N(\mu_s, \Sigma_s) = N(\mu_{\kappa\kappa}, \Sigma_{\kappa\kappa}|
+\vec{d}_{\gamma_1}, \vec{d}_{\kappa} )
+\end{equation}
+
+
+\begin{equation}
+\Sigma_s = \Sigma_{\kappa \kappa} - \Sigma_{\kappa \gamma_1} 
+\Sigma_{\gamma_1\gamma_1}^{-1} 
+\Sigma_{\kappa \gamma_1} 
+\end{equation}
 
 ## notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
