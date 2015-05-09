@@ -319,7 +319,7 @@ An example of $r^2$ with an Euclidean metric for a pair of data points,
 $\vec{x}_i$ and $\vec{y}_j$ 
 would be:
 \begin{equation}
-r_{mn}^2 = D_11 (x_{m1}-y_{n1})^2 + D_22 (x_{m2}-y_{n2})^2 
+r_{mn}^2 = D_{11} (x_{m1}-y_{n1})^2 + D_{22} (x_{m2}-y_{n2})^2 
 \end{equation}
 assuming diagonal metric.
 
@@ -501,9 +501,10 @@ g(r^2) &= \frac{\partial }{\partial r^2}\Sigma_{,hijk}\\
 \frac{\partial \Gamma}{\partial r^2}\Sigma \\ 
 &= -\frac{\beta}{2} \Gamma \Sigma  
 \end{align} 
-This is due to equation (10) showing how 
+This is due to equation (11) showing how 
 \begin{equation*}
-\frac{\partial X_i}{\partial r^2} = 0  
+\frac{\partial X_i}{\partial r^2} = \frac{\partial}{\partial
+r^2}\frac{\partial r^2}{\partial x_i} = 0  
 \end{equation*}
 Or
 \begin{equation*}
