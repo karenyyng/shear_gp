@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # should reverse calculate a reasonable range
     betas = np.arange(0.1, 1.1, 0.1)
 
-    coords = np.array([[1., i] for i in np.arange(0, 1, 0.1)])
+    coords = np.array([[1., i] for i in np.linspace(0, 1, 10)])
     # coords = make_grid(grid_rng, spacing)
     # coords = normalize_2D_data(coords)
     # coords = np.arange(grid_extent, step=spacing)
