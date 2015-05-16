@@ -31,29 +31,33 @@ def from_george_param(p_ge):
 
 
 def char_dim(rho):
-    """convert number from the george parametrization to our parametrization"""
+    """convert number from the george parametrization to our parametrization
+    used in some plots
+    """
     return np.sqrt(-1. / np.log(rho))
 
 
-def make_grid(rng, spacing):
+def make_grid(rng, data_pts):
     """
     :param rng: list / tuple of two floats
         denotes the lower and upper range of the range
     :param spacing: positive float
     """
     # use regular grid
-    xg = np.arange(rng[0], rng[1], spacing)
-    yg = np.arange(rng[0], rng[1], spacing)
-    return np.array([[x, y] for x in xg for y in yg])
+    xg = np.linspace(rng[0], rng[1], data_pts)
+    return np.array([[x, y] for x in xg for y in xg])
 
 
-def generate_2D_data(truth, spacing, kernel, rng=(0., 60.), noise_amp=1e-4,
+def generate_2D_data(truth, data_pts_no, kernel, rng=(0., 60.), noise_amp=1e-12,
                      george_param=True):
     """
     :param:
     truth = list of floats, first two are the hyperparameters for the GP
         the rest of the floats are for the model
-    spacing = float, spacing between grid points
+    data_pts_no = int, number of data points on a side
+    noise_amp = float, small number that denotes Gaussian
+        uncertainties on the data points at coordinates ``x``.
+        This is added in quadrature to the digaonal of the covariance matrix.
     rng = tuple of two floats, end points of the grid in each dimension
     george_param = bool, whether the parameterization was in the format
         required by george
@@ -71,22 +75,28 @@ def generate_2D_data(truth, spacing, kernel, rng=(0., 60.), noise_amp=1e-4,
 
     gp = george.GP(truth[0] * kernel(np.ones(2) * truth[1], ndim=2))
 
-    coords = make_grid(rng, spacing)
-
+    coords = make_grid(rng, data_pts_no)
+    # need to compute before we can sample from the kernel!
+    gp.compute(coords, yerr=noise_amp)
     psi = gp.sample(coords)
 
-    #psi += model(truth[2:], coords)
+    mtx = gp.get_matrix(coords)
+    if np.linalg.slogdet(mtx)[0]:
+        print("Kernel matrix is positive definite.")
+    else:
+        print("WARNING: Kernel matrix is NOT positive definite.")
 
-    # not sure if I am generating psi_err correctly
     # this is the independent Gaussian noise that I add
-    psi_err = noise_amp + noise_amp * np.random.rand(len(psi))
-    psi += psi_err   #  * np.random.randn(len(psi))
+    psi_err = noise_amp * np.random.randn(len(psi))
+    psi += psi_err
 
     return coords, psi, psi_err
 
 
 def draw_cond_pred(s_param, fine_coords, psi, psi_err, coords):
     """
+    this should be sampling from conditional distribution
+    with Schur Complement as the Covariance matrix
     """
     gp = george.GP(s_param[0] *
                    kernels.ExpSquaredKernel(s_param[1], ndim=2))
@@ -110,9 +120,9 @@ def standardize_data(coords):
     Not the best for data with outliers / heavy tails
 
     """
+    raise NotImplementedError
     #psi = psi.copy()
     #return (psi - np.mean(psi.ravel())) / np.std(psi.ravel())
-    return
 
 
 def normalize_2D_data(coords):
@@ -157,31 +167,34 @@ def invgamma_pdf(x, alpha, beta):
 
 
 def beta_pdf():
-    """
-    work in progress
+    """pdf of the beta function which is the conjugate prior
+    of the correlation parameter
+
+    :note: have to think about which form of this we will need
+    in the MCMC ... since we sample beta instead of correlation
     """
     return
 
-
-
 # -------- helper functions for calling emcee ---------------
 
-def lnlike_gp(truth, coord, psi, psi_err=1e-10):
+
+def lnlike_gp(lnTruth, kernel, coord, psi, psi_err=1e-10):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
     george given the data points
 
     Parameters:
     -----------
-        truth : list of floats
+        lnTruth : list of floats
             expect a format of [ln_hp1, ln_hp2, p1, p2, ..., pn]
             where the first two hyperparameters for the kernel function for
             George are in log scale
         coord : 2D numpy array
             each row consists of the 2 coordinates of a grid point
+        kernel : george.kernels object
         psi : numpy array
             this is in 1D after using the ravel() function for the 2D values
         psi_err : numpy array
-            same shape and size as psi but for the errors
+            error for psi, length = no. of observations
 
     Returns:
     -------
@@ -190,21 +203,21 @@ def lnlike_gp(truth, coord, psi, psi_err=1e-10):
     """
     # to be consistent with how we set up lnprior fnction with truth of hp
     # being in the log scale, we have to exponentiate this
-    hp = np.exp(truth[:2])
+    hp = np.exp(lnTruth[:2])
 
-    p = truth[2:]
     # update kernel parameters
+    # DerivKernel objects can only accept list of 2 floats as beta
+    gp = george.GP(hp[0] * kernel([hp[1], hp[1]], ndim=2.))
 
-    gp = george.GP(hp[0] * kernels.ExpSquaredKernel(hp[1], ndim=2.))
-
-    # this step is very revealing that we are fitting the psi_err
-    # when we try to find the hyperparameters
-    # psi_err is going to be added to the covariance matrix of the kernel
-    # by george
     if type(psi_err) == float or type(psi_err) == int:
         psi_err = psi_err * np.ones(len(coord))
+
+    # compute last 2 terms of marginal log likelihood stated
+    # in the Rasmussen GP book eqn. 2.3
     gp.compute(coord, psi_err)
-    return gp.lnlikelihood(psi - model(p, coord))
+
+    # this computes the data dependent fit term of eqn. 2.3
+    return gp.lnlikelihood(psi)  # - model(p, coord))
 
 
 def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
@@ -251,22 +264,25 @@ def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
     return 0.0
 
 
-def lnprob_gp(lnHP_truth, coords, psi, psi_err=1e-10,
+def lnprob_gp(lnHP_truth, kernel, coords, psi, psi_err=1e-10,
               lnprior_vals=[[-10, 10], [-10, 10]]):
     """the log posterior prob that emcee is going to evaluate
 
     Params:
     -------
-    lnHP_truth = tuple of two floats,
-        values are log values of the guessed hyperparameters
-    coords
+        lnHP_truth = tuple of two floats,
+            values are log values of the guessed hyperparameters
+        kernel = george.kernels obj
+        coords = numpy array, feature grid
+        psi = numpy array, variable to be predicted
+        psi_err = float, uncertainty / gaussian noise at coordinate `coords`
     """
     ln_hp = lnHP_truth[:2]
     lp = lnprior_gp(ln_hp, lnprior_vals=lnprior_vals)
 
     if not np.isfinite(lp):
         return -np.inf
-    return lp + lnlike_gp(lnHP_truth, coords, psi, psi_err)
+    return lp + lnlike_gp(lnHP_truth, kernel, coords, psi, psi_err)
 
 
 def draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers):
@@ -275,7 +291,7 @@ def draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers):
             for i in xrange(nwalkers)]
 
 
-def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-6,
+def fit_gp(initial, kernel, data, nwalkers=8, guess_dev_frac=1e-6,
            lnprior_vals=[[-10., 10.], [-10., 10]], burnin_chain_len=int(1e3),
            conver_chain_len=int(5e3), a=2.0, threads=1, pool=None):
     """
@@ -283,6 +299,7 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-6,
     ----------
         initial : list / array
             of initial guesses of the truth value of the **log** of hp
+        kernel: george.kernels object
         data : tuple (t, y, yerr),
             t : numpy array of coord grid,
             y = flattened (1D) numpy array of data,
@@ -298,11 +315,11 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-6,
             acceptance_fraction and vice versa
         threads : integer, number of threads to use for parallelization
         pool : integer, number of pool processes to use for parallelization
-        sampler : allow the use of
 
     Returns
     ------
-        sampler : emcee sampler object
+        sampler : emcee sampler object,
+            these are in LOG space
         p0 : list of floats
             parameter values
     """
@@ -324,25 +341,27 @@ def fit_gp(initial, data, nwalkers=8, guess_dev_frac=1e-6,
     map(lambda x: print("Initial guesses were {0}".format(np.exp(x))), p0)
     # needs a check here to make sure that the initial guesses are not
     # outside the prior range
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a, args=data,
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a,
+                                    args=(kernel, data[0], data[1], data[2]),
                                     kwargs={"lnprior_vals": lnprior_vals},
                                     threads=threads, pool=pool)
 
-    print("Running burn-in with length {0:d}".format(burnin_chain_len))
-    p0, lnp, _ = sampler.run_mcmc(p0, burnin_chain_len)
-    sampler_acceptance_check(sampler)
-    sampler.reset()
+    if burnin_chain_len > 0:
+        print("Running burn-in with length {0:d}".format(burnin_chain_len))
+        p0, lnp, _ = sampler.run_mcmc(p0, burnin_chain_len)
+        sampler_acceptance_check(sampler)
+        sampler.reset()
 
-    print("Running second burn-in with length {0:d}".format(burnin_chain_len))
-    p = p0[np.argmax(lnp)]
-    p0 = [p + guess_dev_frac * np.random.randn(ndim) for i in xrange(nwalkers)]
-    p0, _, _ = sampler.run_mcmc(p0, burnin_chain_len)
-    sampler_acceptance_check(sampler)
-    sampler.reset()
+        print("Running second burn-in with length {0:d}".format(burnin_chain_len))
+        p = p0[np.argmax(lnp)]
+        p0 = [p + guess_dev_frac * np.random.randn(ndim) for i in xrange(nwalkers)]
+        p0, _, _ = sampler.run_mcmc(p0, burnin_chain_len)
+        sampler_acceptance_check(sampler)
+        sampler.reset()
 
     print("Running production chain with length {0}".format(conver_chain_len))
     p0, _, _ = sampler.run_mcmc(p0, conver_chain_len)
-    print("the optimized p0 values are \n{0}".format(p0))
+    print("the optimized p0 values are \n{0}".format(np.exp(p0)))
 
     return sampler, p0
 

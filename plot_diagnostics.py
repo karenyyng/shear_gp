@@ -21,10 +21,10 @@ def comb_zip(ls1, ls2):
     return [(lb1, lb2) for lb1 in ls1 for lb2 in ls2]
 
 
-def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, truth=None,
+def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, kernel_name,
+                       truth=None,
                        fontsize=15, unit="arbitrary unit",
-                       truth_label=[r"$\lambda^{-1}$", r"$\beta$"],
-                       kernel_name="ExpSq"):
+                       truth_label=[r"$\lambda^{-1}$", r"$\beta$"]):
     """
     params:
         psi_s (numpy array): flattened (1D) version of the psi_s data
@@ -256,9 +256,9 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
     -----------
         data: numpy array / emcee.sampler.flatchain.transpose()
             that contain the posterior values of all the variables to be
-            plotted
+            plotted, or dataframe of values
         space = float, px of space that is added between subplots
-        var_list = list of strings - denotes the column header names
+        var_list = list of integers / str - denotes the column header names
             that needs to be plotted
             or if data is not actually a df / dict with keys,
             use a list of integers instead
@@ -270,7 +270,10 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
         Nbins_2D = dictionary, keys are in format of tuples of
             (x_col_str, y_col_str) to denote which subplot you are referring to
         axlabels = dictionary, keys correspond to the variable names
-        xlabel_to_rot = dictionary,
+        xlabel_to_rot = array / dictionary,
+            put array of angle degrees to be rotated if array was supplied as
+            data
+            if dictionary / dataframe is supplied as the data
             key is the the key for the labels to be rotated,
             value is the degree to be rotated
         histran = dictionary,
@@ -278,7 +281,7 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
             form of (lowerhist_range, upperhist_range)
         figsize = integer, figuares are squared this refers to the side length
         fontsize = integer, denotes font size of the labels
-        save = logical, denotes if plot should be saved or not
+        save = boolean, denotes if plot should be saved or not
         prefix = string, prefix of the output plot file
         path = string, path of the output plot file
         suffix = string, file extension of the output plot file
@@ -426,7 +429,7 @@ def N_by_N_lower_triangle_plot(data, space, var_list, axlims=None,
     return est
 
 
-def trace_plot(sampler, labels, truth=None, fontsize=14):
+def trace_plot(sampler, labels, truth=None, fontsize=14, chain_no=0):
     """visualize the MCMC steps to eyeball if burn in is sufficient / if
     convergence is achieved
     :params sampler: sampler object from emcee
@@ -449,7 +452,8 @@ def trace_plot(sampler, labels, truth=None, fontsize=14):
 
     # plot traceplot of each variable one by one
     for i in range(varNo):
-        ax[i].plot(sampler.flatchain[:, i], alpha=0.5, color='grey')
+        # ax[i].plot(sampler.flatchain[:, i], alpha=0.5, color='grey')
+        ax[i].plot(sampler.chain[chain_no, :, i], alpha=0.5, color='grey')
         ax[i].set_ylabel(labels[i], size=fontsize)
 
         # add horizontal line to show truth value if available
