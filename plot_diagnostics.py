@@ -61,8 +61,9 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, kernel_name,
     plt.show()
 
 
-def plot_2D_gp_contour(psi_s, coord_grid, figside, range_No, spacing,
-                       truth=None, unit="arbitrary unit", kernel_name="ExpSq"):
+def plot_2D_gp_contour(psi_s, coord_grid, figside, rng, data_pt_no,
+                       truth=None, unit="arbitrary unit", kernel_name="ExpSq",
+                       ax=None):
     """
     :params
     psi_s = flattened (1D) version of the psi_s data
@@ -70,13 +71,17 @@ def plot_2D_gp_contour(psi_s, coord_grid, figside, range_No, spacing,
     figside = float, in inches how big the figure should be
     truth = tuple of floats that denotes lambDa and rho
     """
-    xg = np.arange(0, range_No, spacing)
+    # xg = np.arange(0, range_No, spacing)
+    xg = np.linspace(rng[0], rng[1], data_pt_no)
     yg = xg
-    fig = plt.figure()
-    fig.set_figheight(figside)
-    fig.set_figwidth(figside)
 
-    ax = fig.add_subplot(111, aspect='equal')
+    if ax is None:
+        fig = plt.figure()
+        fig.set_figheight(figside)
+        fig.set_figwidth(figside)
+        ax = fig.add_subplot(111, aspect='equal')
+
+    # both contour and contourf function need to be transposed before use
     im = ax.contourf(xg, yg, psi_s, cmap=plt.cm.gist_heat)
     unit = "arbitrary unit"
     ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
@@ -88,8 +93,8 @@ def plot_2D_gp_contour(psi_s, coord_grid, figside, range_No, spacing,
         char_length = char_dim(rho)
         ax.set_title(r"{0} kernel: $\lambda=$".format(kernel_name) +
                      "{0}, ".format(lambDa) + r"$\rho=$" +
-                     "{0:.2f},".format(rho) +
-                     r" $ l=$" + "{0:.2f}".format(char_length),
+                     "{0:.2f},".format(rho),
+                        # + r" $ l=$" + "{0:.2f}".format(char_length),
                      fontsize=20)
     fig.colorbar(im, ax=ax, fraction=0.04)
     plt.show()
