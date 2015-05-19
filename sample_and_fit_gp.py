@@ -48,10 +48,11 @@ def make_grid(rng, data_pts):
     return np.array([[x, y] for x in xg for y in xg])
 
 
-def generate_2D_data(truth, data_pts_no, kernel, rng=(0., 60.), noise_amp=1e-12,
-                     george_param=True):
+def generate_2D_data(truth, data_pts_no, kernels, rng=(0., 1.),
+                     noise_amp=1e-6, george_param=True):
     """
-    :param:
+    Parameters
+    =========
     truth = list of floats, first two are the hyperparameters for the GP
         the rest of the floats are for the model
     data_pts_no = int, number of data points on a side
@@ -62,10 +63,10 @@ def generate_2D_data(truth, data_pts_no, kernel, rng=(0., 60.), noise_amp=1e-12,
     george_param = bool, whether the parameterization was in the format
         required by george
 
-    :return:
+    Returns
+    =======
     coords = 2D numpy array, grid points
     psi = numpy array, GP sample values in 1D
-    psi_err = numpy array, gaussian noise
     """
     # by default the mean vector from which the Gaussian data
     # is drawn is zero
@@ -73,24 +74,33 @@ def generate_2D_data(truth, data_pts_no, kernel, rng=(0., 60.), noise_amp=1e-12,
     if george_param is False:
         truth = to_george_param(truth)
 
-    gp = george.GP(truth[0] * kernel(np.ones(2) * truth[1], ndim=2))
+    ExpSquaredLikeKernel = kernels[0]
+    WhiteKernel = kernels[1]
+
+    gp = george.GP(truth[0] *
+                   ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2) +
+                   WhiteKernel(noise_amp ** 2, ndim=2))
 
     coords = make_grid(rng, data_pts_no)
     # need to compute before we can sample from the kernel!
-    gp.compute(coords, yerr=noise_amp)
+    # since we made use of the WhiteKernel, we don't have to
+    # use yerr for adding diagonal noise
+    gp.compute(coords, yerr=0)
     psi = gp.sample(coords)
 
     mtx = gp.get_matrix(coords)
+    # print ("mtx = {0}\n\n".format(mtx))
     if np.linalg.slogdet(mtx)[0]:
         print("Kernel matrix is positive definite.")
+        print("Cond # = {0:.2e}".format(np.linalg.cond(mtx)))
     else:
         print("WARNING: Kernel matrix is NOT positive definite.")
 
     # this is the independent Gaussian noise that I add
-    psi_err = noise_amp * np.random.randn(len(psi))
-    psi += psi_err
+    # psi_err = noise_amp * np.ones(mtx.shape[0]) # noise_amp * np.random.randn(len(psi))
+    # psi += psi_err
 
-    return coords, psi, psi_err
+    return coords, psi  # , psi_err
 
 
 def draw_cond_pred(s_param, fine_coords, psi, psi_err, coords):
@@ -177,44 +187,50 @@ def beta_pdf():
 
 # -------- helper functions for calling emcee ---------------
 
-
-def lnlike_gp(lnTruth, kernel, coord, psi, psi_err=1e-10):
+def lnlike_gp(ln_param, kernels, coord, psi):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
     george given the data points
 
     Parameters:
     -----------
-        lnTruth : list of floats
-            expect a format of [ln_hp1, ln_hp2, p1, p2, ..., pn]
-            where the first two hyperparameters for the kernel function for
-            George are in log scale
-        coord : 2D numpy array
-            each row consists of the 2 coordinates of a grid point
-        kernel : george.kernels object
-        psi : numpy array
-            this is in 1D after using the ravel() function for the 2D values
-        psi_err : numpy array
-            error for psi, length = no. of observations
+    ln_param : list of floats
+        expect a format of [ln_hp1, ln_hp2, ln_hp3, p1, p2, ..., pn]
+        where the first two hyperparameters for the kernel function for
+        George are in log s3cale
+    kernels : list of george.kernels object,
+        first one should have same parameterization as ExpSquaredKernel,
+        second one is the WhiteKernel
+    coord : 2D numpy array
+        each row consists of the 2 coordinates of a grid point
+    psi : numpy array
+        this is in 1D after using the ravel() function for the 2D values
 
     Returns:
     -------
-        likelihood value : float
+    likelihood value : float
 
     """
     # to be consistent with how we set up lnprior fnction with truth of hp
     # being in the log scale, we have to exponentiate this
-    hp = np.exp(lnTruth[:2])
+    hp = np.exp(ln_param[:3])
 
     # update kernel parameters
-    # DerivKernel objects can only accept list of 2 floats as beta
-    gp = george.GP(hp[0] * kernel([hp[1], hp[1]], ndim=2.))
+    ExpSquaredLikeKernel = kernels[0]
+    WhiteKernel = kernels[1]
 
-    if type(psi_err) == float or type(psi_err) == int:
-        psi_err = psi_err * np.ones(len(coord))
+    # DerivKernel objects can only accept list of 2 floats as beta
+    gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2.) +
+                   # George adds diagonal error term in quadrature
+                   WhiteKernel(hp[2] ** 2, ndim=2))
+
+    # if type(psi_err) == float or type(psi_err) == int:
+    #     psi_err = psi_err * np.ones(len(coord))
 
     # compute last 2 terms of marginal log likelihood stated
     # in the Rasmussen GP book eqn. 2.3
-    gp.compute(coord, psi_err)
+    # since we have kernel already used a WhiteKernel,
+    # we shouldn't need a nugget
+    gp.compute(coord, yerr=0.)
 
     # this computes the data dependent fit term of eqn. 2.3
     return gp.lnlikelihood(psi)  # - model(p, coord))

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 #from astrostats import biweightLoc, bcpcl
 from astroML import density_estimation as de
 from sample_and_fit_gp import char_dim
+import sample_and_fit_gp as fit
 import pandas as pd
 from scipy.special import erf
 from scipy.stats import norm
@@ -43,7 +44,11 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, kernel_name,
     fig.colorbar(im, ax=ax, fraction=0.04)
 
     if truth is not None:
-        lambDa, rho = truth
+        if len(truth) == 2:
+            lambDa, rho = truth
+        elif len(truth) == 3:
+            lambDa, rho, _ = truth
+
         char_length = char_dim(rho)
         ax.set_title(r"{1} kernel: {0} =".format(truth_label[0], kernel_name) +
                      "{0:.2f}, ".format(lambDa) + truth_label[1] + "=" +
@@ -537,4 +542,65 @@ def biweightLoc(z, c=6):
     return Cbi
 
 
+def show_likelihood_surface(
+        inv_lambda, beta, noise_amp_negative_exp, kernels,
+        data_pt_nos, inv_lambda_grid_pts=20, beta_grid_pts=10,
+        rng=(0, 1)):
+    """
+    Parameters
+    ----------
+    inv_lambda : float
+        value of inv lambda
+    beta : float
+        value of beta
+    noise_amp_negative_exp : float
+        this value is used to evaluate the value
+        to be added to the diagonal of the kernel matrix as
+        noise_amp_diagonal = 1**(-noise_amp_negative_exp)
+    data_pt_nos : int
+        how many data pt (psi) per side to generate
+        total no. of data pt = (data_pt_nos) ** 2
+    inv_lambda_grid_pts : int
+        no. of inv_lambda value to compute
+        the likelihood surface at
+    beta_grid_pts : int
+        no. of beta value to compute the likelihood surface at
+    """
+    truth = (inv_lambda, beta)
 
+    # rng = (0, 1)  # make sure features are normalized ...
+    noise_amp = pow(1, -noise_amp_negative_exp)
+    print ("Generating 2D data ...")
+    coords, psi = \
+        fit.generate_2D_data(truth, data_pt_nos, kernels=kernels,
+                             rng=rng, noise_amp=noise_amp)
+
+    inv_lambda_grid = np.linspace(0.5, 5.0, inv_lambda_grid_pts)
+    beta_grid = np.linspace(0.1, 1.5, beta_grid_pts)
+    # initialize the param space to examine
+    print ("Computing likelihood surface ...")
+    lnlikelihood_surface = \
+        np.array([[fit.lnlike_gp(np.log((p0, p1, noise_amp)), kernels,
+                          coords, psi)   # , psi_err)
+              for p0 in inv_lambda_grid]
+              for p1 in beta_grid])
+
+    p_grid = [[p0, p1] for p0 in inv_lambda_grid
+              for p1 in beta_grid]
+
+    print ("Plotting likelihood surface ...")
+    plt.contourf(inv_lambda_grid, beta_grid,
+                 lnlikelihood_surface)
+    plt.axvline(truth[0], color='r', lw=2, label='truth')
+    plt.axhline(truth[1], color='r', lw=2)
+    plt.colorbar()
+    plt.title("lnlikelihood surface for {0}\n".format(kernels[0].__name__) +
+              r"data_pt_no ={0}, ".format(data_pt_nos) +
+              r"no. of $\beta$={0}, ".format(beta_grid_pts) +
+              r"no. of $\lambda^{-1}$" +
+              r"={0}".format(inv_lambda_grid_pts),
+              fontsize=14)
+    plt.xlabel(r"$\lambda^{-1}$")
+    plt.ylabel(r"$\beta$")
+    plt.legend(frameon=True)
+    # print("Finished updating")
