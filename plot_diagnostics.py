@@ -543,7 +543,7 @@ def biweightLoc(z, c=6):
 
 
 def show_likelihood_surface(
-        inv_lambda, beta, noise_amp_negative_exp, kernels,
+        inv_lambda, beta, noise_amp, kernels,
         data_pt_nos, inv_lambda_grid_pts=20, beta_grid_pts=10,
         rng=(0, 1)):
     """
@@ -553,10 +553,9 @@ def show_likelihood_surface(
         value of inv lambda
     beta : float
         value of beta
-    noise_amp_negative_exp : float
-        this value is used to evaluate the value
-        to be added to the diagonal of the kernel matrix as
-        noise_amp_diagonal = 1**(-noise_amp_negative_exp)
+    noise_amp : float
+        this value is added **in quadrature** to evaluate the value
+        to be added to the diagonal of the kernel matrix
     data_pt_nos : int
         how many data pt (psi) per side to generate
         total no. of data pt = (data_pt_nos) ** 2
@@ -569,7 +568,7 @@ def show_likelihood_surface(
     truth = (inv_lambda, beta)
 
     # rng = (0, 1)  # make sure features are normalized ...
-    noise_amp = pow(1, -noise_amp_negative_exp)
+    print ("noise_amp = {0:.2e}".format(noise_amp))
     print ("Generating 2D data ...")
     coords, psi = \
         fit.generate_2D_data(truth, data_pt_nos, kernels=kernels,
@@ -581,9 +580,9 @@ def show_likelihood_surface(
     print ("Computing likelihood surface ...")
     lnlikelihood_surface = \
         np.array([[fit.lnlike_gp(np.log((p0, p1, noise_amp)), kernels,
-                          coords, psi)   # , psi_err)
-              for p0 in inv_lambda_grid]
-              for p1 in beta_grid])
+                                 coords, psi)   # , psi_err)
+                 for p0 in inv_lambda_grid]
+                 for p1 in beta_grid])
 
     p_grid = [[p0, p1] for p0 in inv_lambda_grid
               for p1 in beta_grid]
@@ -604,3 +603,4 @@ def show_likelihood_surface(
     plt.ylabel(r"$\beta$")
     plt.legend(frameon=True)
     # print("Finished updating")
+    return lnlikelihood_surface

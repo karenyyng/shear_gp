@@ -26,8 +26,10 @@ def to_george_param(p):
 
 
 def from_george_param(p_ge):
-    """gives lambDa and rho from the parameters of George"""
-    return [1. / p_ge[0], np.exp(-p_ge[1] / 4.)]
+    """gives lambDa and rho from the parameters of George
+    want to vectorize this?
+    """
+    return [1. / p_ge[0], np.exp(-4 * p_ge[1])]
 
 
 def char_dim(rho):
@@ -49,18 +51,20 @@ def make_grid(rng, data_pts):
 
 
 def generate_2D_data(truth, data_pts_no, kernels, rng=(0., 1.),
-                     noise_amp=1e-6, george_param=True):
+                     noise_amp=1e-6, george_param=True,
+                     white_kernel_as_nugget=True):
     """
     Parameters
     =========
-    truth = list of floats, first two are the hyperparameters for the GP
+    truth : list of floats, first two are the hyperparameters for the GP
         the rest of the floats are for the model
-    data_pts_no = int, number of data points on a side
-    noise_amp = float, small number that denotes Gaussian
+    data_pts_no : int, number of data points on a side
+    kernels : list of two george.kernels objects
+    noise_amp : float, small number that denotes Gaussian
         uncertainties on the data points at coordinates ``x``.
         This is added in quadrature to the digaonal of the covariance matrix.
-    rng = tuple of two floats, end points of the grid in each dimension
-    george_param = bool, whether the parameterization was in the format
+    rng : tuple of two floats, end points of the grid in each dimension
+    george_param : bool, whether the parameterization was in the format
         required by george
 
     Returns
@@ -74,31 +78,32 @@ def generate_2D_data(truth, data_pts_no, kernels, rng=(0., 1.),
     if george_param is False:
         truth = to_george_param(truth)
 
-    ExpSquaredLikeKernel = kernels[0]
-    WhiteKernel = kernels[1]
-
-    gp = george.GP(truth[0] *
-                   ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2) +
-                   WhiteKernel(noise_amp ** 2, ndim=2))
-
     coords = make_grid(rng, data_pts_no)
-    # need to compute before we can sample from the kernel!
-    # since we made use of the WhiteKernel, we don't have to
-    # use yerr for adding diagonal noise
-    gp.compute(coords, yerr=0)
+    ExpSquaredLikeKernel = kernels[0]
+
+    if white_kernel_as_nugget:
+        WhiteKernel = kernels[1]
+        gp = george.GP(truth[0] *
+                       ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2) +
+                       WhiteKernel(noise_amp ** 2, ndim=2))
+        # need to compute before we can sample from the kernel!
+        # since we made use of the WhiteKernel, we put yerr = 0
+        gp.compute(coords, yerr=0)
+    else:
+        gp = george.GP(truth[0] *
+                       ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2))
+        # use yerr for adding diagonal noise,
+        # yerr is added in quadrature by George implicitly
+        gp.compute(coords, yerr=noise_amp)
+
     psi = gp.sample(coords)
 
     mtx = gp.get_matrix(coords)
-    # print ("mtx = {0}\n\n".format(mtx))
     if np.linalg.slogdet(mtx)[0]:
         print("Kernel matrix is positive definite.")
         print("Cond # = {0:.2e}".format(np.linalg.cond(mtx)))
     else:
         print("WARNING: Kernel matrix is NOT positive definite.")
-
-    # this is the independent Gaussian noise that I add
-    # psi_err = noise_amp * np.ones(mtx.shape[0]) # noise_amp * np.random.randn(len(psi))
-    # psi += psi_err
 
     return coords, psi  # , psi_err
 
