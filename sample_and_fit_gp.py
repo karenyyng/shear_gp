@@ -193,6 +193,7 @@ def beta_pdf():
 
 # -------- helper functions for calling emcee ---------------
 
+
 def lnlike_gp(ln_param, kernels, coord, psi):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
     george given the data points
@@ -218,7 +219,7 @@ def lnlike_gp(ln_param, kernels, coord, psi):
     """
     # to be consistent with how we set up lnprior fnction with truth of hp
     # being in the log scale, we have to exponentiate this
-    # hp = np.exp(ln_param[:3])
+    hp = np.exp(ln_param[:3])
 
     # update kernel parameters
     ExpSquaredLikeKernel, WhiteKernel = kernels
@@ -241,16 +242,8 @@ def lnlike_gp(ln_param, kernels, coord, psi):
     return gp.lnlikelihood(psi)  # - model(p, coord))
 
 
-def ln_transformed_lnlike_gp(ln_param, kernels, coord, psi, base=np.exp(1)):
-    # log transform inverse precision and beta but not noise term
-    if base == 10:
-        hp = list(np.log10(np.exp(ln_param[:2]))) + \
-             list([np.exp(ln_param[-1])])
-    elif base == np.exp(1):
-        hp = list(ln_param[:2]) + list([np.exp(ln_param[-1])])
-    else:
-        raise NotImplementedError("Can't accept random base for taking " +
-                                  "log of hp. Accepted base: np.exp or 10")
+def ln_transformed_lnlike_gp(ln_param, kernels, coord, psi):
+    hp = [np.exp(i) for i in ln_param[:2]] + list([ln_param[2]])
 
     # get kernel and update kernel parameters
     ExpSquaredLikeKernel, WhiteKernel = kernels
@@ -260,21 +253,15 @@ def ln_transformed_lnlike_gp(ln_param, kernels, coord, psi, base=np.exp(1)):
                    # George adds diagonal error term in quadrature
                    WhiteKernel(hp[2] ** 2, ndim=2))
 
-    # if type(psi_err) == float or type(psi_err) == int:
-    #     psi_err = psi_err * np.ones(len(coord))
-
     # compute last 2 terms of marginal log likelihood stated
     # in the Rasmussen GP book eqn. 2.3
-    # since we have kernel already used a WhiteKernel,
+    # since we have kernel already combined with a WhiteKernel,
     # we shouldn't need a nugget
     gp.compute(coord, yerr=0.)
 
-    # this computes the data dependent fit term of eqn. 2.3
-    # we should take log of the multiplicative term due to the Jacobian
-    # of the log10 transform, then add it to the ln probability
-    return gp.lnlikelihood(psi) + \
-         np.log(1. / np.exp(ln_param[0]) / np.log(base) +
-                1. / np.exp(ln_param[1]) / np.log(base))
+    # `lnlikelihood` computes the data dependent fit term of eqn. 2.3
+    # negative sign for 2nd term comes from $-ln L - ln |J|$
+    return gp.lnlikelihood(psi) - np.sum(ln_param[:2])
 
 
 def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
@@ -437,6 +424,9 @@ def Rubin_Gelman_Rsq_score():
 
 
 def optimize_ln_likelihood(gp, ln_p, psi, coords):
+    """
+    :note: original code obtained from George's documentation
+    """
     import scipy.optimize as op
 
     # Define the objective function (negative log-likelihood in this case).
@@ -474,4 +464,29 @@ def optimize_ln_likelihood(gp, ln_p, psi, coords):
     gp.kernel[:] = results.x
     print(gp.lnlikelihood(y))
 
+    return
+
+
+def calculate_kernel_properties(data_pt_nos, rng, truth):
+    spacing = (rng[1] - rng[0]) / data_pt_nos
+    eff_spacing = 1 / data_pt_nos
+    exponent = -0.5 * spacing ** 2 * truth[1]
+    value_exp = np.exp(exponent)
+    char_spacing = 1 / np.sqrt(2. * truth[1])
+    print ("-------grid properties------------------")
+    print ("spacing = {0:.2e}, ".format(spacing) +
+           "spacing^2 = {0:.2e}".format(spacing**2))
+    print ("eff spacing = {0:.2e}, ".format(eff_spacing) +
+           "eff spacing^2 = {0:.2e}".format(eff_spacing ** 2))
+
+    print ("Exp(-0.5 * {0:.2f} * {1:.2f}) ".format(
+            truth[1], spacing ** 2) +
+           "= Exp({0:.2e}) = {1:1.2e} ".format(exponent, value_exp))
+    print ("{2} * Exp({0:.2f}) = {1:1.2e}".format(exponent,
+                                                  truth[0] * value_exp,
+                                                  truth[0]))
+    print ("\n-------param properties-----------------")
+    print ("char spacing = {0:.2e}".format(char_spacing))
+    print ("Correlation = exp(-4 * {0}) = {1:.2e}".format(truth[1],
+                                                          np.exp(-4 * truth[1])))
     return
