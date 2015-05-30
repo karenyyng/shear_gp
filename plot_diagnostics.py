@@ -88,18 +88,18 @@ def plot_2D_gp_contour(psi_s, coord_grid, figside, rng, data_pt_no,
 
     # both contour and contourf function need to be transposed before use
     im = ax.contourf(xg, yg, psi_s, cmap=plt.cm.gist_heat)
-    unit = "arbitrary unit"
-    ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
-                  fontsize=20)
-    ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
-                  fontsize=20)
+    # unit = "arbitrary unit"
+    # ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
+    #               fontsize=20)
+    # ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
+    #               fontsize=20)
     if truth is not None:
         lambDa, rho = truth
         char_length = char_dim(rho)
         ax.set_title(r"{0} kernel: $\lambda=$".format(kernel_name) +
                      "{0}, ".format(lambDa) + r"$\rho=$" +
                      "{0:.2f},".format(rho),
-                        # + r" $ l=$" + "{0:.2f}".format(char_length),
+                     # + r" $ l=$" + "{0:.2f}".format(char_length),
                      fontsize=20)
     fig.colorbar(im, ax=ax, fraction=0.04)
     plt.show()
@@ -545,7 +545,7 @@ def biweightLoc(z, c=6):
 def show_likelihood_surface(
         inv_lambda, beta, noise_amp, kernels,
         data_pt_nos, inv_lambda_grid_pts=20, beta_grid_pts=10,
-        rng=(0, 1)):
+        rng=(0, 1), ax=None, george_param=True):
     """
     Parameters
     ----------
@@ -565,6 +565,10 @@ def show_likelihood_surface(
     beta_grid_pts : int
         no. of beta value to compute the likelihood surface at
     """
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
     truth = (inv_lambda, beta)
 
     # rng = (0, 1)  # make sure features are normalized ...
@@ -572,35 +576,46 @@ def show_likelihood_surface(
     print ("Generating 2D data ...")
     coords, psi = \
         fit.generate_2D_data(truth, data_pt_nos, kernels=kernels,
-                             rng=rng, noise_amp=noise_amp)
+                             rng=rng, noise_amp=noise_amp,
+                             white_kernel_as_nugget=True)
 
-    inv_lambda_grid = np.linspace(0.5, 5.0, inv_lambda_grid_pts)
-    beta_grid = np.linspace(0.1, 1.5, beta_grid_pts)
+    # provide mean subtracted data - this is done by George
+    # underneath the hood
+    psi -= np.mean(psi)
+
+    inv_lambda_grid = np.logspace(np.log10(0.5), np.log10(10.0),
+                                  inv_lambda_grid_pts, base=10)
+
+    beta_grid = np.logspace(np.log10(0.1), np.log10(5.), beta_grid_pts,
+                            base=10)
+
     # initialize the param space to examine
     print ("Computing likelihood surface ...")
     lnlikelihood_surface = \
-        np.array([[fit.lnlike_gp(np.log((p0, p1, noise_amp)), kernels,
-                                 coords, psi)   # , psi_err)
+        np.array([[fit.ln_transformed_lnlike_gp((p0, p1, noise_amp),
+                                                kernels, coords, psi)
                  for p0 in inv_lambda_grid]
                  for p1 in beta_grid])
 
-    p_grid = [[p0, p1] for p0 in inv_lambda_grid
-              for p1 in beta_grid]
-
     print ("Plotting likelihood surface ...")
-    plt.contourf(inv_lambda_grid, beta_grid,
-                 lnlikelihood_surface)
-    plt.axvline(truth[0], color='r', lw=2, label='truth')
-    plt.axhline(truth[1], color='r', lw=2)
-    plt.colorbar()
-    plt.title("lnlikelihood surface for {0}\n".format(kernels[0].__name__) +
-              r"data_pt_no ={0}, ".format(data_pt_nos) +
-              r"no. of $\beta$={0}, ".format(beta_grid_pts) +
-              r"no. of $\lambda^{-1}$" +
-              r"={0}".format(inv_lambda_grid_pts),
-              fontsize=14)
-    plt.xlabel(r"$\lambda^{-1}$")
-    plt.ylabel(r"$\beta$")
-    plt.legend(frameon=True)
+    cs = ax.contourf(inv_lambda_grid, beta_grid, lnlikelihood_surface)
+    ax.axvline(truth[0], color='r', lw=2, label='truth')
+    ax.axhline(truth[1], color='r', lw=2)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_title("lnlikelihood surface for {0}\n".format(kernels[0].__name__) +
+                 r"data_pt_no ={0}, ".format(data_pt_nos) +
+                 r"no. of $\beta$={0}, ".format(beta_grid_pts) +
+                 r"no. of $\lambda^{-1}$" +
+                 r"={0}".format(inv_lambda_grid_pts),
+                 fontsize=14)
+    plt.colorbar(cs, ax=ax)
+    ax.set_xlabel(r"log10 $ \lambda^{-1}$")
+    if george_param:
+        ax.set_ylabel(r"log10 $\beta$")
+    else:
+        ax.set_ylabel(r"$l$")
+    ax.legend(frameon=True)
     # print("Finished updating")
     return lnlikelihood_surface
+

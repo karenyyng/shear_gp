@@ -50,7 +50,7 @@ def make_grid(rng, data_pts):
     return np.array([[x, y] for x in xg for y in xg])
 
 
-def generate_2D_data(truth, data_pts_no, kernels, rng=(0., 1.),
+def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
                      noise_amp=1e-6, george_param=True,
                      white_kernel_as_nugget=True):
     """
@@ -58,7 +58,7 @@ def generate_2D_data(truth, data_pts_no, kernels, rng=(0., 1.),
     =========
     truth : list of floats, first two are the hyperparameters for the GP
         the rest of the floats are for the model
-    data_pts_no : int, number of data points on a side
+    data_pts_no_per_side : int, number of data points on a side
     kernels : list of two george.kernels objects
     noise_amp : float, small number that denotes Gaussian
         uncertainties on the data points at coordinates ``x``.
@@ -78,7 +78,7 @@ def generate_2D_data(truth, data_pts_no, kernels, rng=(0., 1.),
     if george_param is False:
         truth = to_george_param(truth)
 
-    coords = make_grid(rng, data_pts_no)
+    coords = make_grid(rng, data_pts_no_per_side)
     ExpSquaredLikeKernel = kernels[0]
 
     if white_kernel_as_nugget:
@@ -92,6 +92,7 @@ def generate_2D_data(truth, data_pts_no, kernels, rng=(0., 1.),
     else:
         gp = george.GP(truth[0] *
                        ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2))
+
         # use yerr for adding diagonal noise,
         # yerr is added in quadrature by George implicitly
         gp.compute(coords, yerr=noise_amp)
@@ -217,11 +218,10 @@ def lnlike_gp(ln_param, kernels, coord, psi):
     """
     # to be consistent with how we set up lnprior fnction with truth of hp
     # being in the log scale, we have to exponentiate this
-    hp = np.exp(ln_param[:3])
+    # hp = np.exp(ln_param[:3])
 
     # update kernel parameters
-    ExpSquaredLikeKernel = kernels[0]
-    WhiteKernel = kernels[1]
+    ExpSquaredLikeKernel, WhiteKernel = kernels
 
     # DerivKernel objects can only accept list of 2 floats as beta
     gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2.) +
@@ -239,6 +239,42 @@ def lnlike_gp(ln_param, kernels, coord, psi):
 
     # this computes the data dependent fit term of eqn. 2.3
     return gp.lnlikelihood(psi)  # - model(p, coord))
+
+
+def ln_transformed_lnlike_gp(ln_param, kernels, coord, psi, base=np.exp(1)):
+    # log transform inverse precision and beta but not noise term
+    if base == 10:
+        hp = list(np.log10(np.exp(ln_param[:2]))) + \
+             list([np.exp(ln_param[-1])])
+    elif base == np.exp(1):
+        hp = list(ln_param[:2]) + list([np.exp(ln_param[-1])])
+    else:
+        raise NotImplementedError("Can't accept random base for taking " +
+                                  "log of hp. Accepted base: np.exp or 10")
+
+    # get kernel and update kernel parameters
+    ExpSquaredLikeKernel, WhiteKernel = kernels
+
+    # DerivKernel objects can only accept list of 2 floats as beta
+    gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2) +
+                   # George adds diagonal error term in quadrature
+                   WhiteKernel(hp[2] ** 2, ndim=2))
+
+    # if type(psi_err) == float or type(psi_err) == int:
+    #     psi_err = psi_err * np.ones(len(coord))
+
+    # compute last 2 terms of marginal log likelihood stated
+    # in the Rasmussen GP book eqn. 2.3
+    # since we have kernel already used a WhiteKernel,
+    # we shouldn't need a nugget
+    gp.compute(coord, yerr=0.)
+
+    # this computes the data dependent fit term of eqn. 2.3
+    # we should take log of the multiplicative term due to the Jacobian
+    # of the log10 transform, then add it to the ln probability
+    return gp.lnlikelihood(psi) + \
+         np.log(1. / np.exp(ln_param[0]) / np.log(base) +
+                1. / np.exp(ln_param[1]) / np.log(base))
 
 
 def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
@@ -397,4 +433,45 @@ def sampler_acceptance_check(sampler):
 
 
 def Rubin_Gelman_Rsq_score():
+    return
+
+
+def optimize_ln_likelihood(gp, ln_p, psi, coords):
+    import scipy.optimize as op
+
+    # Define the objective function (negative log-likelihood in this case).
+    def nll(p):
+        # Update the kernel parameters and compute the likelihood.
+        gp.kernel[:] = ln_p
+        ll = gp.lnlikelihood(psi, quiet=True)
+
+        # The scipy optimizer doesn't play well with
+        # infinities.
+        return -ll if np.isfinite(ll) else 1e25
+
+    # And the gradient of the objective function.
+    def grad_nll(p):
+        # Update the kernel parameters and compute the
+        # likelihood.
+        gp.kernel[:] = ln_p
+        return -gp.grad_lnlikelihood(psi, quiet=True)
+
+    # You need to compute the GP once before
+    # starting the optimization.
+    gp.compute(coords)
+
+    # Print the initial ln-likelihood.
+    print(gp.lnlikelihood(psi))
+
+    # Run the optimization routine.
+    p0 = gp.kernel.vector
+    results = op.minimize(nll, p0,
+                          jac=grad_nll,
+                          method="L-BFGS-B")
+
+    # Update the kernel and print the final
+    # log-likelihood.
+    gp.kernel[:] = results.x
+    print(gp.lnlikelihood(y))
+
     return

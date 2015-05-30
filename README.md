@@ -27,8 +27,12 @@ on how to set up a `virtualenv` for this project.
 * functions for analyzing code are in this directory
 * code for calling the functions are in the subdirectories
 
+## Note when setting up `George`
+Don't compile `HODLR`, clone it and rename folder into `hodlr`
+in the github designated location.
+Then just do:
 ```
-
+$ python setup.py develop 
 ```
 
 # note about ipynb magic
