@@ -194,7 +194,7 @@ def beta_pdf():
 # -------- helper functions for calling emcee ---------------
 
 
-def lnlike_gp(ln_param, kernels, coord, psi):
+def lnlike_gp(ln_param, kernels, coord, psi, george_param=False):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
     george given the data points
 
@@ -220,6 +220,8 @@ def lnlike_gp(ln_param, kernels, coord, psi):
     # to be consistent with how we set up lnprior fnction with truth of hp
     # being in the log scale, we have to exponentiate this
     hp = np.exp(ln_param[:3])
+    if not george_param:
+        hp[1] = 1. / hp[1]  # george's parametrization is 1 / beta
 
     # update kernel parameters
     ExpSquaredLikeKernel, WhiteKernel = kernels

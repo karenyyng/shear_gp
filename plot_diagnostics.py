@@ -615,7 +615,7 @@ def show_transformed_ln_likelihood_surface(
 
 def show_ln_likelihood_surface(
         inv_lambda, beta, noise_amp, kernels, data_pt_nos_per_side,
-        inv_lambda_rng=(0.1, 1.), beta_rng=(0.1, 0.5), inv_lambda_grid_pts=20,
+        inv_lambda_rng=(0.1, 3.), beta_rng=(0.1, 1.5), inv_lambda_grid_pts=20,
         beta_grid_pts=10, rng=(0, 1.), ax=None):
     """plots the ln_likelihood surface in the default parametrization of George
 
@@ -641,7 +641,7 @@ def show_ln_likelihood_surface(
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-    truth = (inv_lambda, beta)
+    truth = (inv_lambda, 1. / beta)
 
     # rng = (0, 1)  # make sure features are normalized ...
     print ("noise_amp = {0:.2e}".format(noise_amp))
@@ -653,12 +653,13 @@ def show_ln_likelihood_surface(
 
     # provide mean subtracted data - this is done by George
     # underneath the hood
-    psi -= np.mean(psi)
+    # psi -= np.mean(psi)
 
     inv_lambda_grid = np.logspace(np.log10(inv_lambda_rng[0]),
                                   np.log10(inv_lambda_rng[1]),
                                   inv_lambda_grid_pts, base=10)
 
+    # George 's parametrization is 1 / beta
     beta_grid = np.logspace(np.log10(beta_rng[0]), np.log10(beta_rng[1]),
                             beta_grid_pts, base=10)
 
@@ -673,7 +674,7 @@ def show_ln_likelihood_surface(
     print ("Plotting likelihood surface ...")
     cs = ax.contourf(inv_lambda_grid, beta_grid, lnlikelihood_surface)
     ax.axvline(truth[0], color='r', lw=2, label='truth')
-    ax.axhline(truth[1], color='r', lw=2)
+    ax.axhline(1 / truth[1], color='r', lw=2)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_title("lnlikelihood surface for {0}\n".format(kernels[0].__name__) +
@@ -688,4 +689,3 @@ def show_ln_likelihood_surface(
     ax.legend(frameon=True)
     # print("Finished updating")
     return lnlikelihood_surface
-
