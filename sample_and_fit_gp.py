@@ -39,19 +39,28 @@ def char_dim(rho):
     return np.sqrt(-1. / np.log(rho))
 
 
-def make_grid(rng, data_pts):
+def make_grid(rng, data_pts, regular=False):
     """
     :param rng: list / tuple of two floats
         denotes the lower and upper range of the range
     :param spacing: positive float
+    :param regular: bool
+        determines if regular grid is used or not
+
+    :returns: 2D numpy array
+        shape = (n_obs, 2)
     """
-    # use regular grid
     xg = np.linspace(rng[0], rng[1], data_pts)
-    return np.array([[x, y] for x in xg for y in xg])
+    if regular:
+        return np.array([[x, y] for x in xg for y in xg])
+    else:
+        # use irregular grid for the y-coord
+        return np.array([[x, y * np.random.rand(1)[0]]
+                         for x in xg for y in xg])
 
 
 def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
-                     noise_amp=1e-6, george_param=True,
+                     noise_amp=1e-6,
                      white_kernel_as_nugget=True):
     """
     Parameters
@@ -62,7 +71,7 @@ def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
     kernels : list of two george.kernels objects
     noise_amp : float, small number that denotes Gaussian
         uncertainties on the data points at coordinates ``x``.
-        This is added in quadrature to the digaonal of the covariance matrix.
+        This is added in quadrature to the diagonal of the covariance matrix.
     rng : tuple of two floats, end points of the grid in each dimension
     george_param : bool, whether the parameterization was in the format
         required by george
@@ -72,12 +81,6 @@ def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
     coords = 2D numpy array, grid points
     psi = numpy array, GP sample values in 1D
     """
-    # by default the mean vector from which the Gaussian data
-    # is drawn is zero
-
-    if george_param is False:
-        truth = to_george_param(truth)
-
     coords = make_grid(rng, data_pts_no_per_side)
     ExpSquaredLikeKernel = kernels[0]
 
@@ -85,13 +88,14 @@ def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
         WhiteKernel = kernels[1]
         gp = george.GP(truth[0] *
                        ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2) +
-                       WhiteKernel(noise_amp ** 2, ndim=2))
+                       WhiteKernel(noise_amp ** 2, ndim=2), mean=0.0)
         # need to compute before we can sample from the kernel!
         # since we made use of the WhiteKernel, we put yerr = 0
         gp.compute(coords, yerr=0)
     else:
         gp = george.GP(truth[0] *
-                       ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2))
+                       ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2),
+                       mean=0.0)
 
         # use yerr for adding diagonal noise,
         # yerr is added in quadrature by George implicitly
@@ -120,11 +124,7 @@ def draw_cond_pred(s_param, fine_coords, psi, psi_err, coords):
     return gp.sample_conditional(psi, fine_coords)
 
 
-#------- to be tested ------------------------------------
-
-def jacobian():
-    return
-
+# ------- to be tested ------------------------------------
 
 def model(p, coords):
     """trivial (const) one for testing purpose"""
@@ -193,10 +193,9 @@ def beta_pdf():
 
 # -------- helper functions for calling emcee ---------------
 
-
-def lnlike_gp(ln_param, kernels, coord, psi, george_param=False):
+def lnlike_gp(ln_param, kernels, coord, psi):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
-    george given the data points
+    george given the data points, this uses original parametrization
 
     Parameters:
     -----------
@@ -219,9 +218,7 @@ def lnlike_gp(ln_param, kernels, coord, psi, george_param=False):
     """
     # to be consistent with how we set up lnprior fnction with truth of hp
     # being in the log scale, we have to exponentiate this
-    hp = np.exp(ln_param[:3])
-    if not george_param:
-        hp[1] = 1. / hp[1]  # george's parametrization is 1 / beta
+    hp = np.exp(ln_param)
 
     # update kernel parameters
     ExpSquaredLikeKernel, WhiteKernel = kernels
@@ -231,9 +228,6 @@ def lnlike_gp(ln_param, kernels, coord, psi, george_param=False):
                    # George adds diagonal error term in quadrature
                    WhiteKernel(hp[2] ** 2, ndim=2))
 
-    # if type(psi_err) == float or type(psi_err) == int:
-    #     psi_err = psi_err * np.ones(len(coord))
-
     # compute last 2 terms of marginal log likelihood stated
     # in the Rasmussen GP book eqn. 2.3
     # since we have kernel already used a WhiteKernel,
@@ -241,7 +235,7 @@ def lnlike_gp(ln_param, kernels, coord, psi, george_param=False):
     gp.compute(coord, yerr=0.)
 
     # this computes the data dependent fit term of eqn. 2.3
-    return gp.lnlikelihood(psi)  # - model(p, coord))
+    return gp.lnlikelihood(psi)
 
 
 def ln_transformed_lnlike_gp(ln_param, kernels, coord, psi):
@@ -472,9 +466,9 @@ def optimize_ln_likelihood(gp, ln_p, psi, coords):
 def calculate_kernel_properties(data_pt_nos, rng, truth):
     spacing = (rng[1] - rng[0]) / data_pt_nos
     eff_spacing = 1 / data_pt_nos
-    exponent = -0.5 * spacing ** 2 * truth[1]
+    exponent = -0.5 * spacing ** 2 / truth[1]
     value_exp = np.exp(exponent)
-    char_spacing = 1 / np.sqrt(2. * truth[1])
+    char_spacing = np.sqrt(truth[1])
     print ("-------grid properties------------------")
     print ("spacing = {0:.2e}, ".format(spacing) +
            "spacing^2 = {0:.2e}".format(spacing**2))
@@ -491,4 +485,7 @@ def calculate_kernel_properties(data_pt_nos, rng, truth):
     print ("char spacing = {0:.2e}".format(char_spacing))
     print ("Correlation = exp(-4 * {0}) = {1:.2e}".format(truth[1],
                                                           np.exp(-4 * truth[1])))
+    print ("\n----------------------------------------")
     return
+
+

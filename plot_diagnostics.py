@@ -22,90 +22,6 @@ def comb_zip(ls1, ls2):
     return [(lb1, lb2) for lb1 in ls1 for lb2 in ls2]
 
 
-def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, kernel_name,
-                       truth=None,
-                       fontsize=15, unit="arbitrary unit",
-                       truth_label=[r"$\lambda^{-1}$", r"$\beta$"]):
-    """
-    params:
-        psi_s (numpy array): flattened (1D) version of the psi_s data
-        coord_grid (2D np array of floats):
-        figside = float, in inches how big the figure should be
-        truth = tuple of floats that denotes lambDa and rho
-    """
-    range_No = coord_grid[-1, -1]
-    color = psi_s
-    fig, ax = plt.subplots()
-    im = plt.scatter(coord_grid.transpose()[1], coord_grid.transpose()[0],
-                     s=35, cmap=plt.cm.gist_heat, c=color, linewidths=0.3)
-    #fig.set_figwidth(figside * 1.04)
-
-    fig.set_figheight(figside)
-    fig.colorbar(im, ax=ax, fraction=0.04)
-
-    if truth is not None:
-        if len(truth) == 2:
-            lambDa, rho = truth
-        elif len(truth) == 3:
-            lambDa, rho, _ = truth
-
-        char_length = char_dim(rho)
-        ax.set_title(r"{1} kernel: {0} =".format(truth_label[0], kernel_name) +
-                     "{0:.2f}, ".format(lambDa) + truth_label[1] + "=" +
-                     "{0:.2f},".format(rho) +
-                     r" $ l=$" + "{0:.2f}".format(char_length),
-                     fontsize=fontsize)
-
-    ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
-                  fontsize=fontsize)
-    ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
-                  fontsize=fontsize)
-    spacing = coord_grid[1, 1] - coord_grid[0, 0]
-    ax.set_xlim(coord_grid[0, 0] - spacing, coord_grid[-1, -1] + spacing)
-    ax.set_ylim(coord_grid[0, 0] - spacing, coord_grid[-1, -1] + spacing)
-    plt.show()
-
-
-def plot_2D_gp_contour(psi_s, coord_grid, figside, rng, data_pt_no,
-                       truth=None, unit="arbitrary unit", kernel_name="ExpSq",
-                       ax=None):
-    """
-    :params
-    psi_s = flattened (1D) version of the psi_s data
-    coord_grid = 2D np array of floats
-    figside = float, in inches how big the figure should be
-    truth = tuple of floats that denotes lambDa and rho
-    """
-    # xg = np.arange(0, range_No, spacing)
-    xg = np.linspace(rng[0], rng[1], data_pt_no)
-    yg = xg
-
-    if ax is None:
-        fig = plt.figure()
-        fig.set_figheight(figside)
-        fig.set_figwidth(figside)
-        ax = fig.add_subplot(111, aspect='equal')
-
-    # both contour and contourf function need to be transposed before use
-    im = ax.contourf(xg, yg, psi_s, cmap=plt.cm.gist_heat)
-    # unit = "arbitrary unit"
-    # ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
-    #               fontsize=20)
-    # ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
-    #               fontsize=20)
-    if truth is not None:
-        lambDa, rho = truth
-        char_length = char_dim(rho)
-        ax.set_title(r"{0} kernel: $\lambda=$".format(kernel_name) +
-                     "{0}, ".format(lambDa) + r"$\rho=$" +
-                     "{0:.2f},".format(rho),
-                     # + r" $ l=$" + "{0:.2f}".format(char_length),
-                     fontsize=20)
-    fig.colorbar(im, ax=ax, fraction=0.04)
-    plt.show()
-    return
-
-
 def histplot1d_part(ax, x, prob=None, N_bins='knuth', histrange=None,
                     x_lim=None, y_lim=None):
     '''
@@ -574,6 +490,7 @@ def show_transformed_ln_likelihood_surface(
     truth = [np.exp(i) for i in (true_p0, true_p1)]
 
     print ("noise_amp = {0:.2e}".format(noise_amp))
+    print ("truth = {0}".format(truth))
     print ("Generating 2D data ...")
     coords, psi = \
         fit.generate_2D_data(truth, data_pt_per_side, kernels=kernels,
@@ -582,7 +499,7 @@ def show_transformed_ln_likelihood_surface(
 
     # provide mean subtracted data - this is also done by George
     # underneath the hood
-    psi -= np.mean(psi)
+    # psi -= np.mean(psi)
 
     p0_grid = np.linspace(p0_rng[0], p0_rng[1], p0_grid_pts)
     p1_grid = np.linspace(p1_rng[0], p1_rng[1], p1_grid_pts)
@@ -607,24 +524,96 @@ def show_transformed_ln_likelihood_surface(
                  fontsize=14)
     plt.colorbar(cs, ax=ax)
     ax.set_xlabel(r"a = ln $\lambda^{-1}$")
-    ax.set_ylabel(r"b = ln $\beta$")
+    ax.set_ylabel(r"b = ln $l^2$")
+    ax.legend(frameon=True)
+    # print("Finished updating")
+    return lnlikelihood_surface
+
+
+def show_log10_transformed_ln_likelihood_surface(
+        true_p0, true_p1, noise_amp, kernels,
+        data_pt_per_side, p0_grid_pts=20, p0_rng=(-3, 2.),
+        p1_grid_pts=10, p1_rng=(-2, 1),
+        rng=(0, 1), ax=None, log_transformed=True):
+    """
+    Parameters
+    ----------
+    p0: float
+        value of a
+    p1: float
+        value of b
+    noise_amp : float
+        this value is added **in quadrature** to evaluate the value
+        to be added to the diagonal of the kernel matrix
+    data_pt_per_side : int
+        how many data pt (psi) per side to generate
+        total no. of data pt = (data_pt_per_side) ** 2
+    p0_grid_pts : int
+        no. of `a` value to compute
+        the likelihood surface at
+    p1_grid_pts : int
+        no. of `b` value to compute the likelihood surface at
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+    # we set the truth in inv lambda and beta
+    truth = [np.exp(i) for i in (true_p0, true_p1)]
+
+    print ("noise_amp = {0:.2e}".format(noise_amp))
+    print ("truth = {0}".format(truth))
+    print ("Generating 2D data ...")
+    coords, psi = \
+        fit.generate_2D_data(truth, data_pt_per_side, kernels=kernels,
+                             rng=rng, noise_amp=noise_amp,
+                             white_kernel_as_nugget=True)
+
+    # provide mean subtracted data - this is also done by George
+    # underneath the hood
+    # psi -= np.mean(psi)
+
+    p0_grid = np.linspace(p0_rng[0], p0_rng[1], p0_grid_pts)
+    p1_grid = np.linspace(p1_rng[0], p1_rng[1], p1_grid_pts)
+
+    # initialize the param space to examine
+    print ("Computing likelihood surface ...")
+    lnlikelihood_surface = \
+        np.array([[fit.ln_transformed_lnlike_gp((p0, p1, noise_amp),
+                                                kernels, coords, psi)
+                 for p0 in p0_grid]
+                 for p1 in p1_grid])
+
+    print ("Plotting likelihood surface ...")
+    cs = ax.contourf(p0_grid, p1_grid, lnlikelihood_surface)
+    ax.axvline(np.log(truth[0]), color='r', lw=2, label='truth')
+    ax.axhline(np.log(truth[1]), color='r', lw=2)
+    ax.set_title("lnlikelihood surface for {0}\n".format(kernels[0].__name__) +
+                 r"data_pt_per_side ={0}, ".format(data_pt_per_side) +
+                 r"no. of $a$={0}, ".format(p1_grid_pts) +
+                 r"no. of $b$" +
+                 r"={0}".format(p0_grid_pts),
+                 fontsize=14)
+    plt.colorbar(cs, ax=ax)
+    ax.set_xlabel(r"a = ln $\lambda^{-1}$")
+    ax.set_ylabel(r"b = ln $l^2$")
     ax.legend(frameon=True)
     # print("Finished updating")
     return lnlikelihood_surface
 
 
 def show_ln_likelihood_surface(
-        inv_lambda, beta, noise_amp, kernels, data_pt_nos_per_side,
-        inv_lambda_rng=(0.1, 3.), beta_rng=(0.1, 1.5), inv_lambda_grid_pts=20,
-        beta_grid_pts=10, rng=(0, 1.), ax=None):
+        inv_lambda, l_sq, noise_amp, kernels, data_pt_nos_per_side,
+        inv_lambda_rng=(0.1, 2.), l_sq_rng=(0.05, 1.), inv_lambda_grid_pts=20,
+        l_sq_grid_pts=10, rng=(0, 1.), ax=None):
     """plots the ln_likelihood surface in the default parametrization of George
 
     Parameters
     ----------
     inv_lambda : float
         value of inv lambda
-    beta : float
-        value of beta
+    l_sq : float
+        value of l_sq
     noise_amp : float
         this value is added **in quadrature** to evaluate the value
         to be added to the diagonal of the kernel matrix
@@ -634,14 +623,14 @@ def show_ln_likelihood_surface(
     inv_lambda_grid_pts : int
         no. of inv_lambda value to compute
         the likelihood surface at
-    beta_grid_pts : int
-        no. of beta value to compute the likelihood surface at
+    l_sq_grid_pts : int
+        no. of l_sq value to compute the likelihood surface at
     """
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-    truth = (inv_lambda, 1. / beta)
+    truth = (inv_lambda, l_sq)
 
     # rng = (0, 1)  # make sure features are normalized ...
     print ("noise_amp = {0:.2e}".format(noise_amp))
@@ -654,38 +643,181 @@ def show_ln_likelihood_surface(
     # provide mean subtracted data - this is done by George
     # underneath the hood
     # psi -= np.mean(psi)
+    inv_lambda_grid = np.linspace(inv_lambda_rng[0],
+                                  inv_lambda_rng[1],
+                                  inv_lambda_grid_pts)
 
-    inv_lambda_grid = np.logspace(np.log10(inv_lambda_rng[0]),
-                                  np.log10(inv_lambda_rng[1]),
-                                  inv_lambda_grid_pts, base=10)
-
-    # George 's parametrization is 1 / beta
-    beta_grid = np.logspace(np.log10(beta_rng[0]), np.log10(beta_rng[1]),
-                            beta_grid_pts, base=10)
+    l_sq_grid = np.linspace(l_sq_rng[0],
+                            l_sq_rng[1],
+                            l_sq_grid_pts)
 
     # initialize the param space to examine
     print ("Computing likelihood surface ...")
     lnlikelihood_surface = \
-        np.array([[fit.lnlike_gp((np.log(p0), np.log(p1), noise_amp),
+        np.array([[fit.lnlike_gp((np.log(p0), np.log(p1), np.log(noise_amp)),
                                  kernels, coords, psi)
                  for p0 in inv_lambda_grid]
-                 for p1 in beta_grid])
+                 for p1 in l_sq_grid])
 
     print ("Plotting likelihood surface ...")
-    cs = ax.contourf(inv_lambda_grid, beta_grid, lnlikelihood_surface)
-    ax.axvline(truth[0], color='r', lw=2, label='truth')
-    ax.axhline(1 / truth[1], color='r', lw=2)
-    ax.set_xscale("log")
-    ax.set_yscale("log")
+    cs = ax.contourf(inv_lambda_grid, l_sq_grid, lnlikelihood_surface)
+
+    ax.axvline(inv_lambda, color='r', lw=2, label='truth')
+    ax.axhline(l_sq, color='r', lw=2)
+
     ax.set_title("lnlikelihood surface for {0}\n".format(kernels[0].__name__) +
                  r"data_pt_no ={0}, ".format(data_pt_nos_per_side) +
-                 r"no. of $\beta$={0}, ".format(beta_grid_pts) +
+                 r"no. of $l^2 $={0}, ".format(l_sq_grid_pts) +
                  r"no. of $\lambda^{-1}$" +
                  r"={0}".format(inv_lambda_grid_pts),
                  fontsize=14)
     plt.colorbar(cs, ax=ax)
     ax.set_xlabel(r"$\lambda^{-1}$")
-    ax.set_ylabel(r"$\beta$")
+    ax.set_ylabel(r"$l^2$")
     ax.legend(frameon=True)
     # print("Finished updating")
     return lnlikelihood_surface
+
+
+def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, kernel_name,
+                       truth=None,
+                       fontsize=15, unit="arbitrary unit",
+                       truth_label=[r"$\lambda^{-1}$", r"$\beta$"], ax=None):
+    """
+    params:
+        psi_s (numpy array): flattened (1D) version of the psi_s data
+        coord_grid (2D np array of floats):
+        figside = float, in inches how big the figure should be
+        truth = tuple of floats that denotes lambDa and rho
+    """
+    fig, ax = plt.subplots()
+    range_No = coord_grid[-1, -1]
+    color = psi_s
+    im = plt.scatter(coord_grid.transpose()[1], coord_grid.transpose()[0],
+                     s=35, cmap=plt.cm.gist_heat, c=color, linewidths=0.3)
+    #fig.set_figwidth(figside * 1.04)
+
+    fig.set_figheight(figside)
+    fig.colorbar(im, ax=ax, fraction=0.04)
+
+    if truth is not None:
+        if len(truth) == 2:
+            lambDa, rho = truth
+        elif len(truth) == 3:
+            lambDa, rho, _ = truth
+
+        char_length = char_dim(rho)
+        ax.set_title(r"{1} kernel: {0} =".format(truth_label[0], kernel_name) +
+                     "{0:.2f}, ".format(lambDa) + truth_label[1] + "=" +
+                     "{0:.2f},".format(rho) +
+                     r" $ l=$" + "{0:.2f}".format(char_length),
+                     fontsize=fontsize)
+
+    ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
+                  fontsize=fontsize)
+    ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
+                  fontsize=fontsize)
+    spacing = coord_grid[1, 1] - coord_grid[0, 0]
+    ax.set_xlim(coord_grid[0, 0] - spacing, coord_grid[-1, -1] + spacing)
+    ax.set_ylim(coord_grid[0, 0] - spacing, coord_grid[-1, -1] + spacing)
+    plt.show()
+
+
+def plot_2D_gp_contour(psi_s, coord_grid, figside, rng, data_pt_no,
+                       truth=None, unit="arbitrary unit", kernel_name="ExpSq",
+                       ax=None):
+    """
+    :params
+    psi_s = flattened (1D) version of the psi_s data
+    coord_grid = 2D np array of floats
+    figside = float, in inches how big the figure should be
+    truth = tuple of floats that denotes lambDa and rho
+    """
+    # xg = np.arange(0, range_No, spacing)
+    xg = np.linspace(rng[0], rng[1], data_pt_no)
+    yg = xg
+
+    if ax is None:
+        fig = plt.figure()
+        fig.set_figheight(figside)
+        fig.set_figwidth(figside)
+        ax = fig.add_subplot(111, aspect='equal')
+
+    # both contour and contourf function need to be transposed before use
+    im = ax.contourf(xg, yg, psi_s, cmap=plt.cm.gist_heat)
+    # unit = "arbitrary unit"
+    # ax.set_xlabel("{0} ({1} {0} per side)".format(unit, range_No),
+    #               fontsize=20)
+    # ax.set_ylabel("{0} ({1} {0} per side)".format(unit, range_No),
+    #               fontsize=20)
+    if truth is not None:
+        lambDa, rho = truth
+        char_length = char_dim(rho)
+        ax.set_title(r"{0} kernel: $\lambda=$".format(kernel_name) +
+                     "{0}, ".format(lambDa) + r"$\rho=$" +
+                     "{0:.2f},".format(rho),
+                     # + r" $ l=$" + "{0:.2f}".format(char_length),
+                     fontsize=20)
+    fig.colorbar(im, ax=ax, fraction=0.04)
+    plt.show()
+    return
+
+
+# -- helper functions to visualize the conditional predictive check surface---
+
+def posterior_predictive_surface_vs_truth():
+    return
+
+
+def posterior_predictive_surface_from_MCMC_chains(
+        sampler, rng, spacing, fine_spacing=1.):
+    samples = sampler.flatchain
+    fine_coords = fit.make_grid(rng, fine_spacing)
+    # use 10 realizations from the conditional distribution
+    ix = [np.random.randint(len(samples)) for i in range(10)]
+    cond_preds = map(lambda x:
+                     fit.draw_cond_pred(samples[x], fine_coords,
+                                        psi, psi_err, coords),
+                     ix)
+
+    x_coord = range(int(rng[0]), int(rng[1]), int(spacing))
+    fine_x_coord = range(int(rng[0]), int(rng[1]), int(fine_spacing))
+    fine_y_coord = fine_x_coord
+
+    psi_2D = psi.reshape(rng[1] / spacing, rng[1] / spacing)
+    psi_err_2D = \
+        psi_err.reshape(rng[1] / spacing, rng[1] / spacing)
+
+    cond_preds_2D = \
+        [pred.reshape(rng[1] / fine_spacing, rng[1] / fine_spacing) for
+         pred in cond_preds]
+    return cond_preds_2D, psi_err_2D, psi_2D
+
+
+def change_x_ix(x_ix):
+    plt.title("examining column {0}".format(x_ix))
+    plt.errorbar(y_coord, psi_2D.transpose()[x_ix] ,
+                 yerr=psi_err_2D[:][x_ix],
+             marker='.', ls="None", color='k')
+    fine_x_ix = int(spacing / fine_spacing * x_ix)
+    for i in range(10):
+        plt.plot(fine_y_coord, cond_preds_2D[i].transpose()[fine_x_ix],
+                 color='b', alpha=0.2)
+    plt.ylabel(r"$\psi$", size=14)
+    plt.xlabel("y", size=14)
+    plt.xlim(rng[0]-spacing, rng[1])
+    return
+
+
+def change_y_ix(y_ix):
+    plt.title("examining row {0}".format(y_ix))
+    plt.errorbar(x_coord, psi_2D[y_ix][:] , yerr=psi_err_2D[y_ix][:],
+             marker='.', ls="None", color='k')
+    fine_y_ix = int(spacing / fine_spacing * y_ix)
+    for i in range(10):
+        plt.plot(fine_x_coord, cond_preds_2D[i][fine_y_ix][:],
+                 color='b', alpha=0.2)
+    plt.ylabel(r"$\psi$", size=16)
+    plt.xlabel("x", size=14)
+    plt.xlim(rng[0]-spacing, rng[1])
+    return
