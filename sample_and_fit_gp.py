@@ -57,7 +57,6 @@ def make_grid(rng, data_pts, regular=True):
         return np.random.rand(data_pts ** 2, 2) * (rng[1] - rng[0]) - rng[0]
 
 
-
 def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
                      noise_amp=1e-6, regular_grid=True,
                      white_kernel_as_nugget=True):
@@ -477,7 +476,8 @@ def compute_log10_transformed_ln_likelihood_surface(
         inv_lambda, l_sq, noise_amp, kernels,
         data_pt_nos_per_side=10, rng=(0, 1.),
         p0_rng=(0.1, .2), p0_grid_pts=10,
-        p1_rng=(1e-3, 1.), p1_grid_pts=10, ax=None, verbose=False):
+        p1_rng=(1e-3, 1.), p1_grid_pts=10, ax=None, verbose=False,
+        regular_grid=False):
     """plots the ln_likelihood surface in the default parametrization of George
 
     Parameters
@@ -505,7 +505,8 @@ def compute_log10_transformed_ln_likelihood_surface(
     coords, psi = \
         generate_2D_data(truth, data_pt_nos_per_side, kernels=kernels,
                          rng=rng, noise_amp=noise_amp,
-                         white_kernel_as_nugget=True)
+                         white_kernel_as_nugget=True,
+                         regular_grid=regular_grid)
 
     # linear in the log space!
     p0_grid = np.linspace(np.log10(p0_rng[0]), np.log10(p0_rng[1]),
@@ -566,3 +567,36 @@ def calculate_kernel_properties(data_pt_nos, rng, truth):
     return
 
 
+def optimize_likelihood(gp, y, t):
+    import scipy.optimize as op
+
+    # Define the objective function (negative log-likelihood in this case).
+    def nll(p):
+        # Update the kernel parameters and compute the likelihood.
+        gp.kernel[:] = p
+        ll = gp.lnlikelihood(y, quiet=True)
+
+        # The scipy optimizer doesn't play well with infinities.
+        return -ll if np.isfinite(ll) else 1e25
+
+    # And the gradient of the objective function.
+    def grad_nll(p):
+        # Update the kernel parameters and compute the likelihood.
+        gp.kernel[:] = p
+        return -gp.grad_lnlikelihood(y, quiet=True)
+
+    # You need to compute the GP once before starting the optimization.
+    gp.compute(t)
+
+    # Print the initial ln-likelihood.
+    print("initial lnlikelihood : ", gp.lnlikelihood(y))
+
+    # Run the optimization routine.
+    p0 = gp.kernel.vector
+    results = op.minimize(nll, p0, jac=grad_nll)
+
+    # Update the kernel and print the final log-likelihood.
+    gp.kernel[:] = results.x
+    print("optimized lnlikelihood : ", gp.lnlikelihood(y))
+
+    return results.x

@@ -552,7 +552,7 @@ def plot_2D_gp_samples(psi_s, coord_grid, figside, range_No, kernel_name,
     range_No = coord_grid[-1, -1]
     color = psi_s
     im = plt.scatter(coord_grid.transpose()[1], coord_grid.transpose()[0],
-                     s=35, cmap=plt.cm.gist_heat, c=color, linewidths=0.3)
+                     s=35, c=color, linewidths=0.3)
     #fig.set_figwidth(figside * 1.04)
 
     fig.set_figheight(figside)
