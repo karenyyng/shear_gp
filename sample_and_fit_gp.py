@@ -567,6 +567,9 @@ def calculate_kernel_properties(data_pt_nos, rng, truth):
     return
 
 
+
+# ----------- optimization / initialization routines -------------
+
 def optimize_likelihood(gp, y, t):
     import scipy.optimize as op
 
