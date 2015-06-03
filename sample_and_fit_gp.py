@@ -39,7 +39,7 @@ def char_dim(rho):
     return np.sqrt(-1. / np.log(rho))
 
 
-def make_grid(rng, data_pts, regular=False):
+def make_grid(rng, data_pts, regular=True):
     """
     :param rng: list / tuple of two floats
         denotes the lower and upper range of the range
@@ -54,13 +54,12 @@ def make_grid(rng, data_pts, regular=False):
     if regular:
         return np.array([[x, y] for x in xg for y in xg])
     else:
-        # use irregular grid for the y-coord
-        return np.array([[x, y * np.random.rand(1)[0]]
-                         for x in xg for y in xg])
+        return np.random.rand(data_pts ** 2, 2) * (rng[1] - rng[0]) - rng[0]
+
 
 
 def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
-                     noise_amp=1e-6,
+                     noise_amp=1e-6, regular_grid=True,
                      white_kernel_as_nugget=True):
     """
     Parameters
@@ -81,25 +80,28 @@ def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
     coords = 2D numpy array, grid points
     psi = numpy array, GP sample values in 1D
     """
-    coords = make_grid(rng, data_pts_no_per_side)
+    coords = make_grid(rng, data_pts_no_per_side, regular=regular_grid)
     ExpSquaredLikeKernel = kernels[0]
 
     if white_kernel_as_nugget:
         WhiteKernel = kernels[1]
         gp = george.GP(truth[0] *
-                       ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2) +
+                       ExpSquaredLikeKernel(truth[1], ndim=2) +
                        WhiteKernel(noise_amp ** 2, ndim=2), mean=0.0)
         # need to compute before we can sample from the kernel!
         # since we made use of the WhiteKernel, we put yerr = 0
         gp.compute(coords, yerr=0)
     else:
         gp = george.GP(truth[0] *
-                       ExpSquaredLikeKernel(np.ones(2) * truth[1], ndim=2),
+                       ExpSquaredLikeKernel(truth[1], ndim=2),
                        mean=0.0)
+
+        psi_err = \
+            noise_amp + noise_amp * np.random.randn(data_pt_no_per_side ** 2)
 
         # use yerr for adding diagonal noise,
         # yerr is added in quadrature by George implicitly
-        gp.compute(coords, yerr=noise_amp)
+        gp.compute(coords, yerr=psi_err)
 
     psi = gp.sample(coords)
 
@@ -110,7 +112,10 @@ def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
     else:
         print("WARNING: Kernel matrix is NOT positive definite.")
 
-    return coords, psi  # , psi_err
+    if white_kernel_as_nugget:
+        return coords, psi
+    else:
+        return coords, psi, psi_err
 
 
 def draw_cond_pred(s_param, fine_coords, psi, psi_err, coords):
@@ -193,7 +198,8 @@ def beta_pdf():
 
 # -------- helper functions for calling emcee ---------------
 
-def lnlike_gp(ln_param, kernels, coord, psi):
+
+def lnlike_gp(ln_param, kernels, coord, psi, yerr=0.):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
     george given the data points, this uses original parametrization
 
@@ -221,25 +227,32 @@ def lnlike_gp(ln_param, kernels, coord, psi):
     hp = np.exp(ln_param)
 
     # update kernel parameters
-    ExpSquaredLikeKernel, WhiteKernel = kernels
+    if len(kernels) == 2:
+        ExpSquaredLikeKernel, WhiteKernel = kernels
 
-    # DerivKernel objects can only accept list of 2 floats as beta
-    gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2.) +
-                   # George adds diagonal error term in quadrature
-                   WhiteKernel(hp[2] ** 2, ndim=2))
+        # DerivKernel objects can only accept list of 2 floats as beta
+        gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2.) +
+                       # George adds diagonal error term in quadrature
+                       WhiteKernel(hp[2] ** 2, ndim=2), mean=0.)
+    elif len(kernels) == 1:
+        ExpSquaredLikeKernel = kernels[0]
+
+        # DerivKernel objects can only accept list of 2 floats as beta
+        gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2.),
+                       mean=0.)
+        yerr = hp[2] + hp[2] * np.random.randn(len(psi))
 
     # compute last 2 terms of marginal log likelihood stated
     # in the Rasmussen GP book eqn. 2.3
-    # since we have kernel already used a WhiteKernel,
-    # we shouldn't need a nugget
-    gp.compute(coord, yerr=0.)
+    gp.compute(coord, yerr=yerr)
 
     # this computes the data dependent fit term of eqn. 2.3
     return gp.lnlikelihood(psi)
 
 
 def ln_transformed_lnlike_gp(ln_param, kernels, coord, psi):
-    hp = [np.exp(i) for i in ln_param[:2]] + list([ln_param[2]])
+    hp = list([ln_param[0]]) + list([pow(10, i) for i in ln_param[1:]])
+    # print (hp)
 
     # get kernel and update kernel parameters
     ExpSquaredLikeKernel, WhiteKernel = kernels
@@ -256,8 +269,7 @@ def ln_transformed_lnlike_gp(ln_param, kernels, coord, psi):
     gp.compute(coord, yerr=0.)
 
     # `lnlikelihood` computes the data dependent fit term of eqn. 2.3
-    # negative sign for 2nd term comes from $-ln L - ln |J|$
-    return gp.lnlikelihood(psi) - np.sum(ln_param[:2])
+    return gp.lnlikelihood(psi)
 
 
 def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
@@ -406,6 +418,115 @@ def fit_gp(initial, kernel, data, nwalkers=8, guess_dev_frac=1e-6,
     return sampler, p0
 
 
+def compute_ln_likelihood_surface(
+        inv_lambda, l_sq, noise_amp, kernels,
+        data_pt_nos_per_side=10, rng=(0, 1.),
+        p0_rng=(0.1, 2.), p0_grid_pts=20,
+        p1_rng=(1e-3, 1.), p1_grid_pts=10, ax=None):
+    """plots the ln_likelihood surface in the default parametrization of George
+
+    Parameters
+    ----------
+    inv_lambda : float
+        value of inv lambda
+    l_sq : float
+        value of l_sq
+    noise_amp : float
+        this value is added **in quadrature** to evaluate the value
+        to be added to the diagonal of the kernel matrix
+    data_pt_nos : int
+        how many data pt (psi) per side to generate
+        total no. of data pt = (data_pt_nos) ** 2
+    p0_grid_pts : int
+        no. of p0 value to compute
+        the likelihood surface at
+    p1_grid_pts : int
+        no. of p1 value to compute the likelihood surface at
+    """
+
+    truth = (inv_lambda, l_sq)
+
+    # rng = (0, 1)  # make sure features are normalized ...
+    print ("noise_amp = {0:.2e}".format(noise_amp))
+    print ("Generating 2D data ...")
+    coords, psi = \
+        generate_2D_data(truth, data_pt_nos_per_side, kernels=kernels,
+                         rng=rng, noise_amp=noise_amp,
+                         white_kernel_as_nugget=True)
+
+    # provide mean subtracted data - this is done by George
+    # underneath the hood
+    psi -= np.mean(psi)
+    # psi /= np.std(psi)
+
+    p0_grid = np.linspace(p0_rng[0], p0_rng[1], p0_grid_pts)
+    p1_grid = np.linspace(p1_rng[0], p1_rng[1], p1_grid_pts)
+
+    # initialize the param space to examine
+    print ("Computing likelihood surface ...")
+    lnlikelihood_surface = \
+        np.array([[lnlike_gp((np.log(inv_lambda), np.log(p0), np.log(p1)),
+                             kernels, coords, psi)
+                 for p0 in p0_grid]
+                 for p1 in p1_grid])
+
+    return p0_grid, p1_grid, lnlikelihood_surface
+
+
+def compute_log10_transformed_ln_likelihood_surface(
+        inv_lambda, l_sq, noise_amp, kernels,
+        data_pt_nos_per_side=10, rng=(0, 1.),
+        p0_rng=(0.1, .2), p0_grid_pts=10,
+        p1_rng=(1e-3, 1.), p1_grid_pts=10, ax=None, verbose=False):
+    """plots the ln_likelihood surface in the default parametrization of George
+
+    Parameters
+    ----------
+    inv_lambda : float
+        value of inv lambda
+    l_sq : float
+        value of l_sq
+    noise_amp : float
+        this value is added **in quadrature** to evaluate the value
+        to be added to the diagonal of the kernel matrix
+    data_pt_nos : int
+        how many data pt (psi) per side to generate
+        total no. of data pt = (data_pt_nos) ** 2
+    p0_grid_pts : int
+        no. of p0 value to compute the likelihood surface at
+    p1_grid_pts : int
+        no. of p1 value to compute the likelihood surface at
+    """
+    truth = (inv_lambda, l_sq)
+
+    # rng = (0, 1)  # make sure features are normalized ...
+    print ("noise_amp = {0:.2e}".format(noise_amp))
+    print ("Generating 2D data ...")
+    coords, psi = \
+        generate_2D_data(truth, data_pt_nos_per_side, kernels=kernels,
+                         rng=rng, noise_amp=noise_amp,
+                         white_kernel_as_nugget=True)
+
+    # linear in the log space!
+    p0_grid = np.linspace(np.log10(p0_rng[0]), np.log10(p0_rng[1]),
+                          p0_grid_pts)
+    p1_grid = np.linspace(np.log10(p1_rng[0]), np.log10(p1_rng[1]),
+                          p1_grid_pts)
+
+    if verbose:
+        print (p0_grid)
+        print (p1_grid)
+
+    # initialize the param space to examine
+    print ("Computing likelihood surface ...")
+    lnlikelihood_surface = \
+        np.array([[ln_transformed_lnlike_gp(
+            (inv_lambda, p0, p1), kernels, coords, psi)
+            for p0 in p0_grid] for p1 in p1_grid])
+
+    return p0_grid, p1_grid, lnlikelihood_surface
+
+
 def sampler_acceptance_check(sampler):
     if np.any(sampler.acceptance_fraction < 0.2):
         error_msg = "Initial guesses may be bad / model may be bad \n" + \
@@ -416,50 +537,6 @@ def sampler_acceptance_check(sampler):
 
 
 def Rubin_Gelman_Rsq_score():
-    return
-
-
-def optimize_ln_likelihood(gp, ln_p, psi, coords):
-    """
-    :note: original code obtained from George's documentation
-    """
-    import scipy.optimize as op
-
-    # Define the objective function (negative log-likelihood in this case).
-    def nll(p):
-        # Update the kernel parameters and compute the likelihood.
-        gp.kernel[:] = ln_p
-        ll = gp.lnlikelihood(psi, quiet=True)
-
-        # The scipy optimizer doesn't play well with
-        # infinities.
-        return -ll if np.isfinite(ll) else 1e25
-
-    # And the gradient of the objective function.
-    def grad_nll(p):
-        # Update the kernel parameters and compute the
-        # likelihood.
-        gp.kernel[:] = ln_p
-        return -gp.grad_lnlikelihood(psi, quiet=True)
-
-    # You need to compute the GP once before
-    # starting the optimization.
-    gp.compute(coords)
-
-    # Print the initial ln-likelihood.
-    print(gp.lnlikelihood(psi))
-
-    # Run the optimization routine.
-    p0 = gp.kernel.vector
-    results = op.minimize(nll, p0,
-                          jac=grad_nll,
-                          method="L-BFGS-B")
-
-    # Update the kernel and print the final
-    # log-likelihood.
-    gp.kernel[:] = results.x
-    print(gp.lnlikelihood(y))
-
     return
 
 

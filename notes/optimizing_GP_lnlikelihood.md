@@ -16,35 +16,13 @@ $$k(r^2) = \lambda^{-1} \exp(-\frac{r^2}{2 l^2})$$
 Jacobian needed to preserve the area of integrated PDF  
 $$f_y(\vec{y}) = f_x(\vec{x}) |\det(J)| $$ 
 
-# Transformation needed to evaluate likelihood with our parametrization 
-$$ L_y(\lambda^{-1}, \beta) = L_x(\lambda^{-1}, 1 /\beta) |\det(J)| $$   
-where the Jacobian is:    
-$$|\det(J)| = \left|\frac{\partial l^2}{\partial \beta}\right| = 1 / \beta^2$$
+Only when the transformed variable is the one that we integrate 
+with respect to.
 
-# Final ln likelihood expression 
-$$ -\ln L_y(\lambda^{-1}, \beta) = -\ln L_x(\lambda^{-1}, 1 / \beta) + 2 \ln
-\beta$$    
-First term on the RHS is evaluated by George,    
-second term is what we need to add. 
-
-# Reparametrizating the kernel by log transformation 
-$$ k(r^2) = \lambda^{-1} \exp(-r^2 / 2 l^2) $$ 
-
-As recommended by several papers / books, let    
-$$ \lambda^{-1} = \exp{a} $$    
-$$ l^2 = \exp{b} $$ 
-
-# Log transformation of variables  
-$$ |\det(J)| = \left|\left(\begin{array}{cc}
-\frac{\partial \lambda^{-1}}{\partial a} & \frac{\partial l^2}{\partial a} \\
-\frac{\partial \lambda^{-1} }{\partial b} & \frac{\partial l^2}{\partial b}
-\end{array}\right)\right| = \lambda^{-1}l^2$$
-
-# Log marginal likelihood with new parametrization 
-$$-ln L(a, b) $$    
-$$= -ln L(\lambda^{-1}, l^2) - ln (\lambda^{-1} l^2)$$   
-$$= -ln L(\exp(a), \exp(b)) - ln (\exp(a)\exp(b))$$   
-$$= -ln L(\exp(a), \exp(b)) - a - b$$ 
+Since our likelihood can be written as 
+$$L(\lambda^{-1}, \beta| \vec{x}) = P(\vec{x} | \lambda^{-1}, \beta)$$ 
+it shows that we are not actually integrating w.r.t. our parameters but our
+variables $\vec{x}$. No Jacabian is needed.
 
 # Optimizing the GP lnlikelihood 
 
