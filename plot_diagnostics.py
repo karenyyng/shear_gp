@@ -489,7 +489,10 @@ def plot_log10_transformed_ln_likelihood_surface(
     # lnlikelihood_surface -= np.min(lnlikelihood_surface)
 
     print ("Plotting likelihood surface ...")
-    cs = ax.contourf(p0_grid, p1_grid, lnlikelihood_surface)   # , norm=LogNorm())
+    lvls = list([-1e-5]) + \
+        list([np.max(lnlikelihood_surface) * 0.1 * i for i in range(11)])
+    cs = ax.contourf(p0_grid, p1_grid, lnlikelihood_surface,
+                     levels=lvls)   # , norm=LogNorm())
     ax.axvline(np.log10(truth[0]), color='r', lw=2, label='truth')
     ax.axhline(np.log10(truth[1]), color='r', lw=2)
     ax.set_title("lnlikelihood surface for {0}\n".format(kernel_name) +
@@ -513,7 +516,10 @@ def plot_ln_likelihood_surface(p0_grid, p1_grid, lnlikelihood_surface,
         ax = fig.add_subplot(111)
 
     print ("Plotting likelihood surface ...")
-    cs = ax.contourf(p0_grid, p1_grid, lnlikelihood_surface)
+
+    lvls = list([-1e-5]) + \
+        list([np.max(lnlikelihood_surface) * 0.1 * i for i in range(11)])
+    cs = ax.contourf(p0_grid, p1_grid, lnlikelihood_surface, levels=lvls)
 
     ax.axvline(true_p0, color='r', lw=2, label='truth')
     ax.axhline(true_p1, color='r', lw=2)
