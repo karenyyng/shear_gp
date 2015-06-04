@@ -80,27 +80,21 @@ def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
     psi = numpy array, GP sample values in 1D
     """
     coords = make_grid(rng, data_pts_no_per_side, regular=regular_grid)
-    ExpSquaredLikeKernel = kernels[0]
 
     if white_kernel_as_nugget:
-        WhiteKernel = kernels[1]
-        gp = george.GP(truth[0] *
-                       ExpSquaredLikeKernel(truth[1], ndim=2) +
-                       WhiteKernel(noise_amp ** 2, ndim=2), mean=0.0)
-        # need to compute before we can sample from the kernel!
-        # since we made use of the WhiteKernel, we put yerr = 0
-        gp.compute(coords, yerr=0)
+        gp = construct_gp_for_ExpSqlike_and_white_kernels(kernels,
+                                                          (truth[0],
+                                                           truth[1],
+                                                           truth[1],
+                                                           noise_amp))
+        yerr = 0.
+
     else:
-        gp = george.GP(truth[0] *
-                       ExpSquaredLikeKernel(truth[1], ndim=2),
-                       mean=0.0)
+        gp, yerr = construct_gp_for_ExpSqlike_kernels(kernels, noise_amp)
 
-        psi_err = \
-            noise_amp + noise_amp * np.random.randn(data_pt_no_per_side ** 2)
-
-        # use yerr for adding diagonal noise,
-        # yerr is added in quadrature by George implicitly
-        gp.compute(coords, yerr=psi_err)
+    # use yerr for adding diagonal noise,
+    # yerr is added in quadrature by George implicitly
+    gp.compute(coords, yerr=yerr)
 
     psi = gp.sample(coords)
 
@@ -114,7 +108,7 @@ def generate_2D_data(truth, data_pts_no_per_side, kernels, rng=(0., 1.),
     if white_kernel_as_nugget:
         return coords, psi
     else:
-        return coords, psi, psi_err
+        return coords, psi, yerr
 
 
 def draw_cond_pred(s_param, fine_coords, psi, psi_err, coords):
@@ -198,7 +192,31 @@ def beta_pdf():
 # -------- helper functions for calling emcee ---------------
 
 
-def lnlike_gp(ln_param, kernels, coord, psi, yerr=0.):
+def construct_gp_for_ExpSqlike_and_white_kernels(kernels, hp):
+    """
+    :param kernels:
+    :param hp: list or tuple or array of floats
+        i.e. [inv_lambda, l_sq, l_sq, noise_amp]
+
+    :returns: gp object
+    """
+    ExpSquaredLikeKernel, WhiteKernel = kernels
+    # George adds diagonal error term in quadrature
+    gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[2]], ndim=2.) +
+                   WhiteKernel(hp[3] ** 2, ndim=2), mean=0.0)
+
+    return gp
+
+
+def construct_gp_for_ExpSqlike_kernels(kernels, hp, noise_amp):
+    gp = george.GP(hp[0] * kernels[0]([hp[1], hp[2]], ndim=2.),
+                   mean=0.0)
+    psi_err = \
+        noise_amp + noise_amp * np.random.randn(data_pt_no_per_side ** 2)
+    return gp, psi_err
+
+
+def lnlike_gp(ln_param, gp, coord, psi, yerr=0.0):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
     george given the data points, this uses original parametrization
 
@@ -222,24 +240,8 @@ def lnlike_gp(ln_param, kernels, coord, psi, yerr=0.):
 
     """
     # to be consistent with how we set up lnprior fnction with truth of hp
-    # being in the log scale, we have to exponentiate this
-    hp = np.exp(ln_param)
-
-    # update kernel parameters
-    if len(kernels) == 2:
-        ExpSquaredLikeKernel, WhiteKernel = kernels
-
-        # DerivKernel objects can only accept list of 2 floats as beta
-        gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2.) +
-                       # George adds diagonal error term in quadrature
-                       WhiteKernel(hp[2] ** 2, ndim=2), mean=0.)
-    elif len(kernels) == 1:
-        ExpSquaredLikeKernel = kernels[0]
-
-        # DerivKernel objects can only accept list of 2 floats as beta
-        gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2.),
-                       mean=0.)
-        yerr = hp[2] + hp[2] * np.random.randn(len(psi))
+    # being in the log scale
+    gp.kernel[:] = ln_param
 
     # compute last 2 terms of marginal log likelihood stated
     # in the Rasmussen GP book eqn. 2.3
@@ -249,26 +251,19 @@ def lnlike_gp(ln_param, kernels, coord, psi, yerr=0.):
     return gp.lnlikelihood(psi)
 
 
-def ln_transformed_lnlike_gp(ln_param, kernels, coord, psi):
-    hp = list([ln_param[0]]) + list([pow(10, i) for i in ln_param[1:]])
-    # print (hp)
-
-    # get kernel and update kernel parameters
-    ExpSquaredLikeKernel, WhiteKernel = kernels
-
-    # DerivKernel objects can only accept list of 2 floats as beta
-    gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[1]], ndim=2) +
-                   # George adds diagonal error term in quadrature
-                   WhiteKernel(hp[2] ** 2, ndim=2))
-
-    # compute last 2 terms of marginal log likelihood stated
-    # in the Rasmussen GP book eqn. 2.3
-    # since we have kernel already combined with a WhiteKernel,
-    # we shouldn't need a nugget
-    gp.compute(coord, yerr=0.)
-
-    # `lnlikelihood` computes the data dependent fit term of eqn. 2.3
-    return gp.lnlikelihood(psi)
+def ln10_transform_hp_fix_lambda(ln_param):
+    """
+    This upplies the hyperparameter values to `lnlike_gp`
+    :param ln_param: list of floats
+        [inv_lambda, log10(l_sq), log10(l_sq), log10(noise_amp)]
+    :returns: list of floats
+        these are the hyperparameters in correct scale for
+        being used by `lnlike_gp`
+    """
+    # only l_sq and noise_amp
+    ln_param = [ln_param[0], pow(10, ln_param[1]), pow(10, ln_param[2]),
+                pow(10, ln_param[3]) ** 2]
+    return np.log(ln_param)
 
 
 def lnprior_gp(ln_hp, lnprior_vals=None, verbose=False):
@@ -420,8 +415,8 @@ def fit_gp(initial, kernel, data, nwalkers=8, guess_dev_frac=1e-6,
 def compute_ln_likelihood_surface(
         inv_lambda, l_sq, noise_amp, kernels,
         data_pt_nos_per_side=10, rng=(0, 1.),
-        p0_rng=(0.1, 2.), p0_grid_pts=20,
-        p1_rng=(1e-3, 1.), p1_grid_pts=10, ax=None):
+        p0_rng=(0.1, 2.), p0_grid_pts=40,
+        p1_rng=(1e-3, 1.), p1_grid_pts=40, ax=None):
     """plots the ln_likelihood surface in the default parametrization of George
 
     Parameters
@@ -461,13 +456,14 @@ def compute_ln_likelihood_surface(
     p0_grid = np.linspace(p0_rng[0], p0_rng[1], p0_grid_pts)
     p1_grid = np.linspace(p1_rng[0], p1_rng[1], p1_grid_pts)
 
+    gp = construct_gp_for_ExpSqlike_and_white_kernels(
+        kernels, (inv_lambda, p0_grid[0], p0_grid[0], p1_grid[0]))
+
     # initialize the param space to examine
     print ("Computing likelihood surface ...")
-    lnlikelihood_surface = \
-        np.array([[lnlike_gp((np.log(inv_lambda), np.log(p0), np.log(p1)),
-                             kernels, coords, psi)
-                 for p0 in p0_grid]
-                 for p1 in p1_grid])
+    lnlikelihood_surface = np.array(
+        [[lnlike_gp((np.log(inv_lambda), np.log(p0), np.log(p0), np.log(p1)),
+                    gp, coords, psi) for p0 in p0_grid] for p1 in p1_grid])
 
     return p0_grid, p1_grid, lnlikelihood_surface
 
@@ -518,12 +514,18 @@ def compute_log10_transformed_ln_likelihood_surface(
         print (p0_grid)
         print (p1_grid)
 
+    gp = construct_gp_for_ExpSqlike_and_white_kernels(
+        kernels,
+        ln10_transform_hp_fix_lambda((inv_lambda, p0_grid[0],
+                                     p0_grid[0], p1_grid[0]))
+    )
+
     # initialize the param space to examine
     print ("Computing likelihood surface ...")
-    lnlikelihood_surface = \
-        np.array([[ln_transformed_lnlike_gp(
-            (inv_lambda, p0, p1), kernels, coords, psi)
-            for p0 in p0_grid] for p1 in p1_grid])
+    lnlikelihood_surface = np.array([[
+        lnlike_gp(ln10_transform_hp_fix_lambda((inv_lambda, p0, p0, p1)),
+                  gp, coords, psi)
+        for p0 in p0_grid] for p1 in p1_grid])
 
     return p0_grid, p1_grid, lnlikelihood_surface
 

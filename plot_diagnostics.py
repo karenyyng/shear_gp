@@ -517,7 +517,7 @@ def plot_ln_likelihood_surface(p0_grid, p1_grid, lnlikelihood_surface,
 
     print ("Plotting likelihood surface ...")
 
-    lvls = list([-1e-5]) + \
+    lvls = list([-1e-1]) + \
         list([np.max(lnlikelihood_surface) * 0.1 * i for i in range(11)])
     cs = ax.contourf(p0_grid, p1_grid, lnlikelihood_surface, levels=lvls)
 

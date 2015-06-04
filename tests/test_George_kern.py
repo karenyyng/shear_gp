@@ -51,7 +51,22 @@ def test_ln_likelihood1(truth=[1., .3, 1e-2]):
     return
 
 def test_ln_likelihood2(truth=[1., .3, 1e-2]):
-    coords = fit.make_grid((0, 1), 5)
+    coords = fit.make_grid((0, 1), 5, regular=True)
+    py_ExpSq = ExpSq(*truth)
+    psi = py_ExpSq.draw_sample(coords)
+
+    py_kernel = py_ExpSq.get_kernel(coords)
+    py_ln_likelihood_val = py_ExpSq.ln_likelihood(coords, psi)
+
+    kernels = [ExpSquaredKernel, WhiteKernel]
+    lnlikelihood = fit.lnlike_gp(np.log(truth), kernels, coords, psi)
+
+    assert py_ln_likelihood_val == lnlikelihood
+    return
+
+
+def test_ln_likelihood3(truth=[1., .3, 1e-2]):
+    coords = fit.make_grid((0, 1), 5, regular=True)
     py_ExpSq = ExpSq(*truth)
     psi = py_ExpSq.draw_sample(coords)
 
