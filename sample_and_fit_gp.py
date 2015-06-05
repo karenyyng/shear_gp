@@ -189,6 +189,11 @@ def beta_pdf():
     """
     return
 
+
+def log_prior(param):
+    """:to do: check the 1 / sigma prior is indeed the Jeffrey's prior"""
+    return 1. / param
+
 # -------- helper functions for calling emcee ---------------
 
 
@@ -568,40 +573,56 @@ def calculate_kernel_properties(data_pt_nos, rng, truth):
     print ("\n----------------------------------------")
     return
 
-
-
 # ----------- optimization / initialization routines -------------
 
-def optimize_likelihood(gp, y, t):
-    import scipy.optimize as op
 
-    # Define the objective function (negative log-likelihood in this case).
-    def nll(p):
-        # Update the kernel parameters and compute the likelihood.
-        gp.kernel[:] = p
-        ll = gp.lnlikelihood(y, quiet=True)
+def negative_ln_likelihood_in_log10_space(dep_var, log10_param, gp,
+                                          fix_ix=None):
+    """
+    Define the objective function (negative log-likelihood in this case).
+    """
+    # Update the kernel parameters and compute the likelihood.
+    gp.kernel[:] = [pow(10, i) for i in log10_param]
+    ll = gp.lnlikelihood(dep_var, quiet=True)
 
-        # The scipy optimizer doesn't play well with infinities.
-        return -ll if np.isfinite(ll) else 1e25
+    # The scipy optimizer doesn't play well with infinities.
+    return -ll if np.isfinite(ll) else 1e25
 
+
+def grad_negative_ln_likelihood_in_log10_space(dep_var, log10_param, gp):
     # And the gradient of the objective function.
-    def grad_nll(p):
-        # Update the kernel parameters and compute the likelihood.
-        gp.kernel[:] = p
-        return -gp.grad_lnlikelihood(y, quiet=True)
+    # Update the kernel parameters in log10 space and compute the likelihood.
+    gp.kernel[:] = [pow(10, i) for i in log10_param]
+    return -gp.grad_lnlikelihood(dep_var, quiet=True)
+
+
+def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
+                                       kernels):
+    """
+    :param initial_guess: list / tuple / array of floats
+        in format of [inv_lambda, l_sq, l_sq, noise_amp] in original scale
+    """
+    import scipy.optimize as op
+    assert len(initial_guess) == 4, \
+        "initial_guess should be in format of \n" + \
+        "[inv_lambda, l_sq, l_sq, noise_amp]"
+
+    gp = construct_gp_for_ExpSqlike_and_white_kernels(
+        kernels, initial_guess)
 
     # You need to compute the GP once before starting the optimization.
-    gp.compute(t)
+    gp.compute(features)
 
     # Print the initial ln-likelihood.
-    print("initial lnlikelihood : ", gp.lnlikelihood(y))
+    print("initial lnlikelihood : ", gp.lnlikelihood(dep_var))
 
-    # Run the optimization routine.
-    p0 = gp.kernel.vector
-    results = op.minimize(nll, p0, jac=grad_nll)
+    # Run the optimization routine in log10 space.
+    results = op.minimize(negative_ln_likelihood_in_log10_space,
+                          np.log10(initial_guess + np.random.rand(4) * 1e-5),
+                          jac=grad_negative_ln_likelihood_in_log10_space)
 
     # Update the kernel and print the final log-likelihood.
     gp.kernel[:] = results.x
-    print("optimized lnlikelihood : ", gp.lnlikelihood(y))
+    print("optimized lnlikelihood : ", gp.lnlikelihood(dep_var))
 
     return results.x
