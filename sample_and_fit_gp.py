@@ -576,6 +576,7 @@ def calculate_kernel_properties(data_pt_nos, rng, truth):
 
 # ----------- optimization / initialization routines -------------
 
+
 def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
                                        kernels):
     """
@@ -583,7 +584,8 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
     to get this
 
     :param initial_guess: list / tuple / array of floats
-        in format of [inv_lambda, l_sq, l_sq, noise_amp ** 2.] in original scale
+        in format of [inv_lambda, l_sq, l_sq, noise_amp ** 2.] in original
+        scale
     """
     import scipy.optimize as op
     assert len(initial_guess) == 4, \
@@ -598,7 +600,10 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
         # kernel vector (of param) is in log scale
         # One last transformation to log space is due to how George stores
         # params in vectors.
-        gp.kernel[:] = np.log([pow(10, i) for i in log10_param])
+        hp = np.log(
+            [pow(10, i) for i in log10_param]
+        )
+        gp.kernel[:] = [hp[0], hp[1], hp[1], hp[2]]
         ll = gp.lnlikelihood(dep_var, quiet=True)
         print ("New params : ", np.exp(gp.kernel.vector))
         print("New lnlikelihood : ", gp.lnlikelihood(dep_var))
@@ -612,34 +617,46 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
         # compute the likelihood.
         # One last transformation to log space is due to how George stores
         # params in vectors.
-        gp.kernel[:] = np.log([pow(10, i) for i in log10_param])
+        hp = np.log(
+            [pow(10, i) for i in log10_param]
+        )
+        gp.kernel[:] = [hp[0], hp[1], hp[1], hp[2]]
         grad_ll = -gp.grad_lnlikelihood(dep_var, quiet=True)
         if ~np.isfinite(grad_ll):
-            print ("Infinte gradient of log likelihood")
+            print ("Infinite gradient of log likelihood")
         return grad_ll
 
     gp = construct_gp_for_ExpSqlike_and_white_kernels(
         kernels, initial_guess)
 
+    assert initial_guess[1] == initial_guess[2], \
+        "two values for l_sq have to be the same"
+
     # You need to compute the GP once before starting the optimization.
     gp.compute(features)
 
     # Print the initial ln-likelihood.
-    print("Initial lnlikelihood : ", gp.lnlikelihood(dep_var))
+    original_ll = gp.lnlikelihood(dep_var)
 
     guess = \
-        (initial_guess[0], initial_guess[1], initial_guess[2],
+        (initial_guess[0], initial_guess[1],
          initial_guess[3] ** 2)
-    guess = np.log10(guess + np.random.rand(4) * 1e-1)
+    rand = np.random.rand(3) * 5e-1
+    guess = np.log10(guess + np.array([rand[0], rand[1], rand[2]]))
     print ("Guessed params :", [pow(10, i) for i in guess])
 
     # Run the optimization routine in log10 space.
     results = op.minimize(negative_ln_likelihood_in_log10_space,
-                          x0=guess, method="L-BFGS-B",
-                          jac=grad_negative_ln_likelihood_in_log10_space)
+                          x0=guess, method="L-BFGS-B")  # ,
+                          # jac=grad_negative_ln_likelihood_in_log10_space)
 
     # Update the kernel and print the final log-likelihood.
-    gp.kernel[:] = results.x
+    hp = np.log(
+        [pow(10, i) for i in results.x]
+    )
+    gp.kernel[:] = [hp[0], hp[1], hp[1], hp[2]]
     print("Optimized lnlikelihood : ", gp.lnlikelihood(dep_var))
 
-    return results.x
+    print("\nInitial lnlikelihood : ", original_ll)
+
+    return [hp[0], hp[1], hp[1], hp[2]]
