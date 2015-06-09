@@ -12,7 +12,7 @@ from GP import ExpSquared as ExpSq
 
 @pytest.fixture
 def TwoD_test_data_w_WhiteKernel(truth=[1., 0.3, 0.3, 1e-2],
-                                 data_pts_no_per_side=2):
+                                 data_pts_no_per_side=5):
     kernels = (ExpSquaredKernel, WhiteKernel)
 
     return fit.generate_2D_data(truth[:2], data_pts_no_per_side, kernels,
@@ -65,7 +65,7 @@ def test_ln_likelihood1(truth=[1., .3, .3, 1e-2]):
 
     py_ln_likelihood_val = np.sum([data_fit_term, complexity_penality, const])
 
-    assert gp._const == complexity_penality + const
+    assert gp._const - (complexity_penality + const) < 1e-10
     assert py_ln_likelihood_val - lnlikelihood < 1e-10
     return
 
