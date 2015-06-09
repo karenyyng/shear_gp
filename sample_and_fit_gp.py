@@ -579,8 +579,11 @@ def calculate_kernel_properties(data_pt_nos, rng, truth):
 def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
                                        kernels):
     """
+    I modified the built-in optimization function of `George`
+    to get this
+
     :param initial_guess: list / tuple / array of floats
-        in format of [inv_lambda, l_sq, l_sq, noise_amp] in original scale
+        in format of [inv_lambda, l_sq, l_sq, noise_amp ** 2.] in original scale
     """
     import scipy.optimize as op
     assert len(initial_guess) == 4, \
@@ -597,6 +600,8 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
         # params in vectors.
         gp.kernel[:] = np.log([pow(10, i) for i in log10_param])
         ll = gp.lnlikelihood(dep_var, quiet=True)
+        print ("New params : ", np.exp(gp.kernel.vector))
+        print("New lnlikelihood : ", gp.lnlikelihood(dep_var))
 
         # The scipy optimizer doesn't play well with infinities.
         return -ll if np.isfinite(ll) else 1e25
@@ -620,15 +625,21 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
     gp.compute(features)
 
     # Print the initial ln-likelihood.
-    print("initial lnlikelihood : ", gp.lnlikelihood(dep_var))
+    print("Initial lnlikelihood : ", gp.lnlikelihood(dep_var))
+
+    guess = \
+        (initial_guess[0], initial_guess[1], initial_guess[2],
+         initial_guess[3] ** 2)
+    guess = np.log10(guess + np.random.rand(4) * 1e-1)
+    print ("Guessed params :", [pow(10, i) for i in guess])
 
     # Run the optimization routine in log10 space.
     results = op.minimize(negative_ln_likelihood_in_log10_space,
-                          np.log10(initial_guess + np.random.rand(4) * 1e-5),
+                          x0=guess, method="L-BFGS-B",
                           jac=grad_negative_ln_likelihood_in_log10_space)
 
     # Update the kernel and print the final log-likelihood.
     gp.kernel[:] = results.x
-    print("optimized lnlikelihood : ", gp.lnlikelihood(dep_var))
+    print("Optimized lnlikelihood : ", gp.lnlikelihood(dep_var))
 
     return results.x
