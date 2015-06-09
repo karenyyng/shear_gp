@@ -66,7 +66,7 @@ def test_ln_likelihood1(truth=[1., .3, .3, 1e-2]):
     py_ln_likelihood_val = np.sum([data_fit_term, complexity_penality, const])
 
     assert gp._const == complexity_penality + const
-    assert py_ln_likelihood_val == lnlikelihood
+    assert py_ln_likelihood_val - lnlikelihood < 1e-10
     return
 
 
@@ -76,7 +76,9 @@ def test_ln_likelihood2(truth=[1., .3, .3, 1e-2]):
     psi = py_ExpSq.draw_sample(coords)
 
     py_kernel = py_ExpSq.get_kernel(coords)
-    py_ln_likelihood_val = py_ExpSq.ln_likelihood(coords, psi)
+    data_fit_term, complexity_penality, const = \
+        py_ExpSq.ln_likelihood(coords, psi, separate_terms=True)
+    py_ln_likelihood_val = np.sum([data_fit_term, complexity_penality, const])
 
     kernels = [ExpSquaredKernel, WhiteKernel]
     gp = \
@@ -86,8 +88,8 @@ def test_ln_likelihood2(truth=[1., .3, .3, 1e-2]):
     lnlikelihood = fit.lnlike_gp(np.log((truth[0], truth[1], truth[2],
                                          truth[3] ** 2)), gp, coords, psi)
 
-    assert gp._const == complexity_penality + const
-    assert py_ln_likelihood_val == lnlikelihood
+    assert gp._const - (complexity_penality + const) < 1e-10
+    assert py_ln_likelihood_val - lnlikelihood < 1e-10
     return
 #
 # def test_ln_likelihood3(truth=[1., .3, 1e-2]):
