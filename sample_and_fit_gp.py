@@ -208,7 +208,7 @@ def construct_gp_for_ExpSqlike_and_white_kernels(kernels, hp):
     ExpSquaredLikeKernel, WhiteKernel = kernels
     # George adds diagonal error term in quadrature
     gp = george.GP(hp[0] * ExpSquaredLikeKernel([hp[1], hp[2]], ndim=2.) +
-                   WhiteKernel(hp[3] ** 2, ndim=2), mean=0.0)
+                   WhiteKernel(pow(hp[3], 2), ndim=2), mean=0.0)
 
     return gp
 
@@ -231,8 +231,9 @@ def lnlike_gp(ln_param, gp, coord, psi, yerr=0.0):
         expect a format of [ln_hp1, ln_hp2, ln_hp3, p1, p2, ..., pn]
         where the first two hyperparameters for the kernel function for
         George are in log s3cale
-    kernels : list of george.kernels object,
-        first one should have same parameterization as ExpSquaredKernel,
+    gp : george.gp object,
+        gp should be a linear combination of two kernels,
+        first have same parameterization as ExpSquaredKernel,
         second one is the WhiteKernel
     coord : 2D numpy array
         each row consists of the 2 coordinates of a grid point
@@ -575,27 +576,6 @@ def calculate_kernel_properties(data_pt_nos, rng, truth):
 
 # ----------- optimization / initialization routines -------------
 
-
-def negative_ln_likelihood_in_log10_space(dep_var, log10_param, gp,
-                                          fix_ix=None):
-    """
-    Define the objective function (negative log-likelihood in this case).
-    """
-    # Update the kernel parameters and compute the likelihood.
-    gp.kernel[:] = [pow(10, i) for i in log10_param]
-    ll = gp.lnlikelihood(dep_var, quiet=True)
-
-    # The scipy optimizer doesn't play well with infinities.
-    return -ll if np.isfinite(ll) else 1e25
-
-
-def grad_negative_ln_likelihood_in_log10_space(dep_var, log10_param, gp):
-    # And the gradient of the objective function.
-    # Update the kernel parameters in log10 space and compute the likelihood.
-    gp.kernel[:] = [pow(10, i) for i in log10_param]
-    return -gp.grad_lnlikelihood(dep_var, quiet=True)
-
-
 def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
                                        kernels):
     """
@@ -606,6 +586,32 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
     assert len(initial_guess) == 4, \
         "initial_guess should be in format of \n" + \
         "[inv_lambda, l_sq, l_sq, noise_amp]"
+
+    def negative_ln_likelihood_in_log10_space(log10_param):
+        """
+        Define the objective function (negative log-likelihood in this case).
+        """
+        # Update the kernel parameters and compute the likelihood.
+        # kernel vector (of param) is in log scale
+        # One last transformation to log space is due to how George stores
+        # params in vectors.
+        gp.kernel[:] = np.log([pow(10, i) for i in log10_param])
+        ll = gp.lnlikelihood(dep_var, quiet=True)
+
+        # The scipy optimizer doesn't play well with infinities.
+        return -ll if np.isfinite(ll) else 1e25
+
+    def grad_negative_ln_likelihood_in_log10_space(log10_param):
+        # And the gradient of the objective function.
+        # Update the kernel parameters in log10 space and
+        # compute the likelihood.
+        # One last transformation to log space is due to how George stores
+        # params in vectors.
+        gp.kernel[:] = np.log([pow(10, i) for i in log10_param])
+        grad_ll = -gp.grad_lnlikelihood(dep_var, quiet=True)
+        if ~np.isfinite(grad_ll):
+            print ("Infinte gradient of log likelihood")
+        return grad_ll
 
     gp = construct_gp_for_ExpSqlike_and_white_kernels(
         kernels, initial_guess)
