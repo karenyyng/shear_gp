@@ -39,7 +39,7 @@ def char_dim(rho):
     return np.sqrt(-1. / np.log(rho))
 
 
-def make_grid(rng, data_pts, regular=True):
+def make_grid(rng, data_pts, fine_data_pts=None, regular=True):
     """
     :param rng: list / tuple of two floats
         denotes the lower and upper range of the range
@@ -51,8 +51,11 @@ def make_grid(rng, data_pts, regular=True):
         shape = (n_obs, 2)
     """
     xg = np.linspace(rng[0], rng[1], data_pts)
+    if fine_data_pts is None:
+        fine_data_pts = data_pts
+    yg = np.linspace(rng[0], rng[1], fine_data_pts)
     if regular:
-        return np.array([[x, y] for x in xg for y in xg])
+        return np.array([[x, y] for x in xg for y in yg])
     else:
         return np.random.rand(data_pts ** 2, 2) * (rng[1] - rng[0]) - rng[0]
 
@@ -578,21 +581,29 @@ def calculate_kernel_properties(data_pt_nos, rng, truth):
 
 
 def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
-                                       kernels):
-    """
+                                       kernels, verbose=True):
+    """A Scipy L-BFGS-B optimizer for George kernels
     I modified the built-in optimization function of `George`
     to get this
 
     :param initial_guess: list / tuple / array of floats
         in format of [inv_lambda, l_sq, l_sq, noise_amp ** 2.] in original
         scale
+    :param dep_var: list / array of floats
+        len(dep_var) = len(features)
+    :param features: list / array of floats
+
+    :return: george.gp object with the optimized parameters
     """
     import scipy.optimize as op
     assert len(initial_guess) == 4, \
-        "initial_guess should be in format of \n" + \
+        "Initial_guess should be in format of \n" + \
         "[inv_lambda, l_sq, l_sq, noise_amp]"
 
-    def negative_ln_likelihood_in_log10_space(log10_param):
+    assert initial_guess[1] == initial_guess[2], \
+        "Two values for l_sq have to be the same"
+
+    def negative_ln_likelihood_in_log10_space(log10_param, verbose=False):
         """
         Define the objective function (negative log-likelihood in this case).
         """
@@ -604,9 +615,11 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
             [pow(10, i) for i in log10_param]
         )
         gp.kernel[:] = [hp[0], hp[1], hp[1], hp[2]]
+
         ll = gp.lnlikelihood(dep_var, quiet=True)
-        print ("New params : ", np.exp(gp.kernel.vector))
-        print("New lnlikelihood : ", gp.lnlikelihood(dep_var))
+        if verbose:
+            print ("New params : ", np.exp(gp.kernel.vector))
+            print ("New lnlikelihood : ", gp.lnlikelihood(dep_var))
 
         # The scipy optimizer doesn't play well with infinities.
         return -ll if np.isfinite(ll) else 1e25
@@ -629,9 +642,6 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
     gp = construct_gp_for_ExpSqlike_and_white_kernels(
         kernels, initial_guess)
 
-    assert initial_guess[1] == initial_guess[2], \
-        "two values for l_sq have to be the same"
-
     # You need to compute the GP once before starting the optimization.
     gp.compute(features)
 
@@ -643,7 +653,8 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
          initial_guess[3] ** 2)
     rand = np.random.rand(3) * 5e-1
     guess = np.log10(guess + np.array([rand[0], rand[1], rand[2]]))
-    print ("Guessed params :", [pow(10, i) for i in guess])
+    if verbose:
+        print ("Initial guess :", [pow(10, i) for i in guess])
 
     # Run the optimization routine in log10 space.
     results = op.minimize(negative_ln_likelihood_in_log10_space,
@@ -655,8 +666,11 @@ def optimize_likelihood_in_log10_space(initial_guess, dep_var, features,
         [pow(10, i) for i in results.x]
     )
     gp.kernel[:] = [hp[0], hp[1], hp[1], hp[2]]
-    print("Optimized lnlikelihood : ", gp.lnlikelihood(dep_var))
 
-    print("\nInitial lnlikelihood : ", original_ll)
+    final_param = np.exp([hp[0], hp[1], hp[1], hp[2]])
+    if verbose:
+        print("Optimized lnlikelihood : ", gp.lnlikelihood(dep_var))
 
-    return [hp[0], hp[1], hp[1], hp[2]]
+        print("\nInitial lnlikelihood : ", original_ll)
+        print ("Optimized param : ", final_param)
+    return gp

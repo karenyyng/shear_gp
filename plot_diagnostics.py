@@ -621,7 +621,38 @@ def plot_2D_gp_sample_contour(
 
 # -- helper functions to visualize the conditional predictive check surface---
 
-def posterior_predictive_surface_vs_truth():
+def posterior_predictive_surface_vs_truth(gp, coords, psi, x_ix,
+                                          data_pts_no_per_side, rng, factor=5):
+    fine_no_of_data_pts = data_pts_no_per_side * factor
+    fine_coords = fit.make_grid(rng, data_pts_no_per_side, fine_no_of_data_pts)
+    y_fine_grid = np.unique(fine_coords[:, 1])
+    mu, cov = gp.predict(psi, fine_coords)
+    fine_mu = mu.reshape(data_pts_no_per_side, fine_no_of_data_pts)
+    fine_var = np.sqrt(np.diag(cov))
+    fine_var = fine_var.reshape(data_pts_no_per_side, fine_no_of_data_pts)
+
+    noise_amp = np.sqrt(gp.kernel.pars[-1])
+    print ("Inferred noise_amp = ", noise_amp)
+
+    # original grid
+    y_grid = np.unique(coords[:, 1])
+
+    psi = psi.reshape(data_pts_no_per_side, data_pts_no_per_side)
+    plt.errorbar(y_grid, psi[x_ix],
+                 noise_amp * np.ones(data_pts_no_per_side), fmt='none',
+                 color='k', label="Simulated data")
+    plt.xlim(-0.1, 1.1)
+    _ = plt.plot(y_fine_grid, fine_mu[x_ix], color='k',
+                 label="Mean prediction from GP")
+    plt.fill_between(y_fine_grid, fine_mu[x_ix] +
+                     fine_var[x_ix],
+                     fine_mu[x_ix] - fine_var[x_ix],
+                     alpha=0.2,
+                     facecolor='grey', label="standard dev.")
+    plt.ylabel(r"$\psi$")
+    plt.xlabel("Grid points of row {0}".format(x_ix))
+    plt.title("Gaussian process fit after optimization")
+    plt.legend(loc='best')
     return
 
 
@@ -650,30 +681,3 @@ def posterior_predictive_surface_from_MCMC_chains(
     return cond_preds_2D, psi_err_2D, psi_2D
 
 
-def change_x_ix(x_ix):
-    plt.title("examining column {0}".format(x_ix))
-    plt.errorbar(y_coord, psi_2D.transpose()[x_ix] ,
-                 yerr=psi_err_2D[:][x_ix],
-             marker='.', ls="None", color='k')
-    fine_x_ix = int(spacing / fine_spacing * x_ix)
-    for i in range(10):
-        plt.plot(fine_y_coord, cond_preds_2D[i].transpose()[fine_x_ix],
-                 color='b', alpha=0.2)
-    plt.ylabel(r"$\psi$", size=14)
-    plt.xlabel("y", size=14)
-    plt.xlim(rng[0]-spacing, rng[1])
-    return
-
-
-def change_y_ix(y_ix):
-    plt.title("examining row {0}".format(y_ix))
-    plt.errorbar(x_coord, psi_2D[y_ix][:] , yerr=psi_err_2D[y_ix][:],
-             marker='.', ls="None", color='k')
-    fine_y_ix = int(spacing / fine_spacing * y_ix)
-    for i in range(10):
-        plt.plot(fine_x_coord, cond_preds_2D[i][fine_y_ix][:],
-                 color='b', alpha=0.2)
-    plt.ylabel(r"$\psi$", size=16)
-    plt.xlabel("x", size=14)
-    plt.xlim(rng[0]-spacing, rng[1])
-    return
