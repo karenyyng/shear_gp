@@ -74,8 +74,8 @@ def kernels_inv_beta_equals_pt_25():
     return ker
 
 
-def test__X__(kernels_inv_beta_equals_pt_25):
-    kernels = kernels_inv_beta_equals_pt_25
+def test__X__(kernels):
+    kernels = kernels
     for k, v in kernels.iteritems():
         # __X__(m, n, ix)
         assert v.__X__(1, 0, 0) == 3.
@@ -180,18 +180,21 @@ def test_Sigma4thDeriv_pt_25(kernels_inv_beta_equals_pt_25):
 
         # test the metric
         assert v.__Sigma4thDeriv__([1, 1, 1, 1], 1, 0, [1, 2]) == \
-            (.25 ** 4. * 625 - .25 ** 3 * 6. * 25 * 2 + .25 ** 2. *  3 * 4) / 4.
+            (.25 ** 4. * 625 - .25 ** 3 * 6. * 25 * 2 +
+             .25 ** 2. *  3 * 4) / 4.
 
         # test different indices
         assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) - \
-            (.25 ** 4. * 225 - .25 ** 3. * (25 - 9)  # 2 of the 6 terms are nonzero
+            (.25 ** 4. * 225 -
+             .25 ** 3. * (25 - 9)  # 2 of the 6 terms are nonzero
              + .25 ** 2. * 1) / 4. < 1e-10  # 1 of the 3 terms are nonzero
 
         assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) == \
             v.__Sigma4thDeriv__([0, 0, 1, 1], 1, 0, [1, 1])
 
         assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) - \
-            (.25 ** 4. * 225. - .25 ** 3. * (25 - 9) + .25 ** 2. * 1) / 4. < 1e-10
+            (.25 ** 4. * 225. -
+             .25 ** 3. * (25 - 9) + .25 ** 2. * 1) / 4. < 1e-10
 
         assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) == \
             v.__Sigma4thDeriv__([0, 1, 0, 1], 1, 0, [1, 1])

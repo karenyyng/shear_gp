@@ -12,7 +12,7 @@ for how the kernels are implemented in george
     location of the data points, and `psi` refers to the variable to
     be predicted
 """
-from __future__ import division
+from __future__ import division, print_function
 # import george
 from george.kernels import ExpSquaredKernel
 import matplotlib.pyplot as plt
@@ -164,6 +164,7 @@ class KernelDerivatives(ExpSquaredKernel):
 
         termA = self.__termA__(ix, m, n)
 
+        print ("beta = {}".format(beta))
         return (beta ** 4. * termA -
                 beta ** 3. * allTermBs +
                 beta ** 2. * allTermCs) / 4.
@@ -211,8 +212,8 @@ class KernelDerivatives(ExpSquaredKernel):
         terms_signs = self.__terms_signs__
 
         if debug:
-            print "calling KernelDerivatives class value method"
-            print "pars for beta is {0}".format(pars)
+            print ("calling KernelDerivatives class value method")
+            print ("pars for beta is {0}".format(pars))
 
         mat = np.zeros((x1.shape[0], x1.shape[0]))
         for i in range(len(ix_list)):

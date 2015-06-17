@@ -1,3 +1,4 @@
+from __future__ import division, print_function
 import george
 import numpy as np
 from kern_deriv import *
@@ -8,7 +9,7 @@ import matplotlib.pyplot as plt
 def run_KappaKappaExpSquare(coords, beta=1.):
     """sanity check"""
     k1 = 1.0 * george.kernels.ExpSquaredKernel(metric=beta, ndim=2)
-    print "pars of original kernel are {0}".format(k1)
+    print ("pars of original kernel are {0}".format(k1))
     gpExpSq = george.GP(k1)
 
     # by default the kappaKappaExpSquaredKernel has ndim = 2.0
@@ -20,27 +21,27 @@ def run_KappaKappaExpSquare(coords, beta=1.):
 
     Cov = gpExpSq.get_matrix(coords)
     KKCov = gpKKExpSq.get_matrix(coords)
-    print "gp exp sq kernel gives {0}\n".format(Cov)
-    print "\nKKExpSq kernel gives {0}\n".format(KKCov)
+    print ("gp exp sq kernel gives {0}\n".format(Cov))
+    print ("\nKKExpSq kernel gives {0}\n".format(KKCov))
 
     return
 
 
-def plotDerivCov(kernel, coords, beta=1., plot=False, debug=False):
+def plotDerivCov(kernel, coords, l_sq=1., plot=False, debug=False):
     # coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
 
-    k = kernel(beta, coords, ndim=2)
+    k = kernel(1. / l_sq, coords, ndim=2)
     gpKKExpSq = george.GP(1.0 * k)
 
     if debug:
-        print "--------------------------------------------------------------"
-        print "print info about {0}".format(kernel.__name__)
+        print ("-----------------------------------------------------")
+        print ("print info about {0}".format(kernel.__name__))
     gpKKExpSq.compute(coords, 1e-5)
     if plot:
         k.plot1(spacing=spacing, save=False)
     plt.close()
     if debug:
-        print "--------------------------------------------------------------"
+        print ("----------------------------------------------------")
     return k.value(coords)
 
 

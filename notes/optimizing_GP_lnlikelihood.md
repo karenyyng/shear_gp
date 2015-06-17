@@ -36,10 +36,51 @@ $$f_y(\vec{y}) = f_x(\vec{x}) |\det(J)| $$
 Only when the transformed variable is the one that we integrate 
 with respect to.
 
-Since our likelihood can be written as 
-$$L(\lambda^{-1}, \beta| \vec{x}) = P(\vec{x} | \lambda^{-1}, \beta)$$ 
-it shows that we are not actually integrating w.r.t. our parameters but
-integrating our variables $\vec{x}$. No Jacabian is needed.
+Let 
+\begin{equation}
+\vec{x} = \left(\begin{array}{c}
+  \lambda^{-1} \\
+  l^2
+\end{array}
+\right)
+= \left(\begin{array}{c}
+B^{a}\\ 
+B^b
+\end{array}
+\right)
+\end{equation}
+where $l^2$ is the characteristic length.
+
+\begin{align}
+f_y(\vec{y}) = f_y(a, b) &= 
+f_x(\lambda^{-1}, l^2)\left| \det \left( 
+\begin{array}{cc}
+\frac{\partial \lambda^{-1}}{\partial a} & 
+\frac{\partial \lambda^{-1}}{\partial b} \\
+\frac{\partial l^2}{\partial a} & 
+\frac{\partial l^2}{\partial b} 
+\end{array})
+\right)\right| \\
+&= 
+f_x(\lambda^{-1}, l^2)\left| \det \left( 
+\begin{array}{cc}
+\frac{\partial e^{a \ln B}}{\partial a} & 
+\frac{\partial e^{a \ln B}}{\partial b} \\
+\frac{\partial e^{b \ln B}}{\partial a} & 
+\frac{\partial e^{b \ln B}}{\partial b} 
+\end{array})
+\right)\right| \\
+&= f_x(B^a, B^b)(B^a + B^b)\ln B
+\end{align}
+
+When we implement the log likelihood in the MCMC we need
+\begin{equation}
+\ln L_y(a, b) = \ln L_x(B^a, B^b) + \ln (B^a + B^b) + \ln (\ln B)
+\end{equation}
+we can ignore the last term as it is a constant w.r.t. change in $a$ and $b$.
+
+
+
 
 
 # Optimizing the GP lnlikelihood 
