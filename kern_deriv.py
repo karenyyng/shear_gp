@@ -29,9 +29,13 @@ class KernelDerivatives(ExpSquaredKernel):
     :params beta:
     """
 
-    def __init__(self, beta, ndim=2, dim=-1, extra=[], rMetric=1.):
+    def __init__(self, beta, ndim=2, dim=-1, extra=[], rMetric=1.,
+                 verbose=False):
+        if verbose:
+            print("Initializing ExpSquared within KernelDerivatives")
+            print("flipping parametrization to be {}".format(1. / beta))
         # the following corresponds to Kernel.__init__
-        super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
+        super(ExpSquaredKernel, self).__init__(1. / beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # pick 2 pairs from 4 objects so we have 4C2 combinations
@@ -258,15 +262,29 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     Inherits from the ExpSquaredKernel class and multiplies it with appropriate
     coefficients
 
-    :params coords: 2D numpy array
-        with shape = (n_obs, 2)
-
     .. math::
         eqn (2) from kern_deriv.pdf
+
+    Parameters
+    ==========
+    beta : float
+        beta parameter, NOT $l^2$
+    coords : numpy array of floats
+        expected shape = (nobs, 2)
+    ndim : int
+        this number should be 2
+    verbose : bool
+        if debugging messages should be printed
+
+    Other parameters should be left to their default values as of 06/2015
     """
 
-    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
-        super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
+    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.,
+                 verbose=False):
+        if verbose:
+            print("Initializing ExpSquared within KappaKappaExpSquaredKernel")
+            print("flipping parametrization to be {}".format(1. / beta))
+        super(ExpSquaredKernel, self).__init__(1. / beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
@@ -309,13 +327,29 @@ class KappaGamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     """
     inherits from the ExpSquaredKernel class and multiplies it with
     appropriate coefficients
-    :params coords:
 
     .. math:: eqn (5) from kern_deriv.pdf
+
+    Parameters
+    ==========
+    beta : float
+        beta parameter, NOT $l^2$
+    coords : numpy array of floats
+        expected shape = (nobs, 2)
+    ndim : int
+        this number should be 2
+    verbose : bool
+        if debugging messages should be printed
+
+    Other parameters should be left to their default values as of 06/2015
     """
 
-    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
-        super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
+    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.,
+                 verbose=False):
+        if verbose:
+            print("Initializing ExpSquared within KappaGamma1ExpSquaredKernel")
+            print("flipping parametrization to be {}".format(1. / beta))
+        super(ExpSquaredKernel, self).__init__(1. / beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
         self.__beta__ = beta
@@ -354,10 +388,21 @@ class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     inherits from the ExpSquaredKernel class and multiplies it with appropriate
     coefficients
 
-    :params coords:
-
     .. math::
         eqn (6) from kern_deriv.pdf
+
+    Parameters
+    ==========
+    beta : float
+        beta parameter, NOT $l^2$
+    coords : numpy array of floats
+        expected shape = (nobs, 2)
+    ndim : int
+        this number should be 2
+    verbose : bool
+        if debugging messages should be printed
+
+    Other parameters should be left to their default values as of 06/2015
 
     """
 
@@ -403,11 +448,26 @@ class Gamma1Gamma1ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     Inherits from the ExpSquaredKernel class and multiplies it with appropriate
     coefficients
 
-    :params coords:
+    Parameters
+    ==========
+    beta : float
+        beta parameter, NOT $l^2$
+    coords : numpy array of floats
+        expected shape = (nobs, 2)
+    ndim : int
+        this number should be 2
+    verbose : bool
+        if debugging messages should be printed
+
+    Other parameters should be left to their default values as of 06/2015
     """
 
-    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
-        super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
+    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.,
+                 verbose=False):
+        if verbose:
+            print("Initializing ExpSquared within Gamma1Gamma1ExpSquaredKernel")
+            print("flipping parametrization to be {}".format(1. / beta))
+        super(ExpSquaredKernel, self).__init__(1. / beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
@@ -447,11 +507,26 @@ class Gamma2Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
     inherits from the ExpSquaredKernel class and multiplies it with
     appropriate coefficients
 
-    :params metric: a list of 2 integers
+    Parameters
+    ==========
+    beta : float
+        beta parameter, NOT $l^2$
+    coords : numpy array of floats
+        expected shape = (nobs, 2)
+    ndim : int
+        this number should be 2
+    verbose : bool
+        if debugging messages should be printed
+
+    Other parameters should be left to their default values as of 06/2015
     """
 
-    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
-        super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
+    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.,
+                 verbose=False):
+        if verbose:
+            print("Initializing ExpSquared within Gamma2Gamma2ExpSquaredKernel")
+            print("flipping parametrization to be {}".format(1. / beta))
+        super(ExpSquaredKernel, self).__init__(1. / beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
@@ -499,8 +574,12 @@ class Gamma1Gamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
     """
 
-    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
-        super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
+    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.,
+                 verbose=False):
+        if verbose:
+            print("Initializing ExpSquared within Gamma1Gamma2ExpSquaredKernel")
+            print("flipping parametrization to be {}".format(1. / beta))
+        super(ExpSquaredKernel, self).__init__(1. / beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()

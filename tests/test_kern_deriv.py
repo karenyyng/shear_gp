@@ -39,8 +39,7 @@ def test_normalized_corr():
     coords = np.array([[0., 0.], [1 / np.sqrt(2), 1 / np.sqrt(2)]])
     assert normalized_corr(2., coords) - np.exp(-4. * 1. * 2.) < 1e-10
 
-
-# --------- testing the kernels for non-kernel specific things -----
+# -----set up kernel classes --------------------------------------
 @pytest.fixture(scope="class")
 def kernels():
     beta, coords = two_coords_test_data()
@@ -74,6 +73,7 @@ def kernels_inv_beta_equals_pt_25():
     return ker
 
 
+# --------- testing the kernels for non-kernel specific things -----
 def test__X__(kernels):
     kernels = kernels
     for k, v in kernels.iteritems():
@@ -181,7 +181,7 @@ def test_Sigma4thDeriv_pt_25(kernels_inv_beta_equals_pt_25):
         # test the metric
         assert v.__Sigma4thDeriv__([1, 1, 1, 1], 1, 0, [1, 2]) == \
             (.25 ** 4. * 625 - .25 ** 3 * 6. * 25 * 2 +
-             .25 ** 2. *  3 * 4) / 4.
+             .25 ** 2. * 3 * 4) / 4.
 
         # test different indices
         assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) - \
@@ -259,6 +259,119 @@ def test_compute_Sigma4derv_matrix(kernels):
 
 
 # -----------kernel dependent tests! -------------------------------
+# following tests only test when inv_beta = 1.
+def test_kappakappa_value(kernels):
+    k = kernels["kappakappa"]
+    ker_val = k.value()
+
+    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+
+    assert np.linalg.slogdet(ker_val)[0] == 1
+    assert ker_val[0, 0] == (3 * 1 / 4. + 1 / 4. + 1 / 4. + 3 * 1 / 4.) * \
+        orig_ker[0][0]
+    assert ker_val[1, 1] == (3 / 4. + 1 / 4. + 1 / 4. + 3 / 4.) * \
+        orig_ker[1][1]
+
+    assert ker_val[1, 0] - ((3 ** 4 - 6 * 3 ** 2 + 3 * 1) / 4. +
+                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. +
+                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. +
+                            (5 ** 4 - 6 * 5 ** 2 + 3 * 1) / 4.) * \
+        orig_ker[1][0] == 0
+
+    assert ker_val[0, 1] == ker_val[1, 0]
+
+    return ker_val
+
+
+def test_kappagamma1_value(kernels):
+    k = kernels["kappagamma1"]
+    ker_val = k.value()
+    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+
+    # these ker_val[0, 0] and ker_val[1, 1] shouldn't be zero from the physics
+    assert ker_val[0, 0] == (3 * 1 / 4. + 1 / 4. - 1 / 4. - 3 * 1 / 4.) * \
+        orig_ker[0][0]
+    assert ker_val[1, 1] == (3 / 4. + 1 / 4. - 1 / 4. - 3 / 4.) * \
+        orig_ker[1][1]
+
+    assert ker_val[1, 0] - ((3 ** 4 - 6 * 3 ** 2 + 3 * 1) / 4. +
+                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. -
+                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. -
+                            (5 ** 4 - 6 * 5 ** 2 + 3 * 1) / 4.) * \
+        orig_ker[1][0] == 0
+
+    assert ker_val[0, 1] == ker_val[1, 0]
+
+
+def test_kappagamma2_value(kernels):
+    k = kernels["kappagamma2"]
+    ker_val = k.value()
+    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+
+    assert ker_val[0, 0] == 0
+    assert ker_val[1, 1] == 0
+    assert ker_val[1, 0] == (((3 * 5 ** 3) - (5 * 3 * 3)) / 4 * 2 +
+                             ((5 * 3 ** 3) - (5 * 3 * 3)) / 4 * 2) * \
+        orig_ker[1][0]
+    assert ker_val[1, 0] == ker_val[0, 1]
+
+
+def test_gamma1gamma1_value(kernels):
+    k = kernels["gamma1gamma1"]
+    ker_val = k.value()
+    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+
+    assert np.linalg.slogdet(ker_val)[0] == 1
+
+    assert ker_val[0, 0] == (3 * 1 / 4. - 1 / 4. - 1 / 4. + 3 * 1 / 4.) * \
+        orig_ker[0][0]
+    assert ker_val[1, 1] == (3 / 4. - 1 / 4. - 1 / 4. + 3 / 4.) * \
+        orig_ker[1][1]
+
+    assert ker_val[1, 0] - ((3 ** 4 - 6 * 3 ** 2 + 3 * 1) / 4. -
+                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. -
+                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. +
+                            (5 ** 4 - 6 * 5 ** 2 + 3 * 1) / 4.) * \
+        orig_ker[1][0] == 0
+
+    assert ker_val[0, 1] == ker_val[1, 0]
+
+
+def test_gamma1gamma2_value(kernels):
+    k = kernels["gamma1gamma2"]
+    ker_val = k.value()
+    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+    assert ker_val[0, 0] == 0
+    assert ker_val[1, 1] == 0
+    assert ker_val[1, 0] == (((5 * 3 ** 3) - (5 * 3 * 3)) / 4 * 2 -
+                             ((3 * 5 ** 3) - (5 * 3 * 3)) / 4 * 2) * \
+        orig_ker[1][0]
+    assert ker_val[1, 0] == ker_val[0, 1]
+
+
+def test_gamma2gamma2_value(kernels):
+    k = kernels["gamma2gamma2"]
+    ker_val = k.value()
+    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+
+    assert np.linalg.slogdet(ker_val)[0] == 1
+    assert ker_val[0, 0] == (1 / 4.) * 4. * orig_ker[0][0]
+    assert ker_val[1, 1] == (1 / 4.) * 4. * orig_ker[0][0]
+
+    assert ker_val[1, 0] == ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) * \
+        orig_ker[1][0]
+
+    assert ker_val[0, 1] == ker_val[1, 0]
+
+
+# -----------kernel dependent varying beta (inv_beta) -----------------------
+# following tests only test when inv_beta = 1.
 def test_kappakappa_value(kernels):
     k = kernels["kappakappa"]
     ker_val = k.value()
