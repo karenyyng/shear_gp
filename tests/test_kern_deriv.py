@@ -486,14 +486,17 @@ def test_gamma1gamma2_value_beta_equals_pt_25(kernels_beta_equals_pt_25):
     ker_val = k.value()
 
     # original kernel value from ExpSquaredKernel
-    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
-                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
-    assert np.linalg.slogdet(ker_val)[0] == 1  # postive definite
+    orig_ker = np.array([[1, np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.), 1]])
+    # assert np.linalg.slogdet(ker_val)[0] == 1  # postive definite
     assert ker_val[0, 0] == 0
     assert ker_val[1, 1] == 0
-    assert ker_val[1, 0] == (((5 * 3 ** 3) - (5 * 3 * 3)) / 4 * 2 -
-                             ((3 * 5 ** 3) - (5 * 3 * 3)) / 4 * 2) * \
-        orig_ker[1][0]
+    # term C is zero
+    assert ker_val[1, 0] == (((5 * 3 ** 3 * .25 ** 4.) -
+                              (5 * 3 * 3) * .25 ** 3.) -
+                             ((3 * 5 ** 3 * .25 ** 4.) -
+                              (5 * 3 * 3 * .25 ** 3.))
+                             ) / 4 * 2 * orig_ker[1][0]
     assert ker_val[1, 0] == ker_val[0, 1]
 
 
@@ -502,15 +505,18 @@ def test_gamma2gamma2_value_inv_beta_equals_pt_25(kernels_beta_equals_pt_25):
     ker_val = k.value()
 
     # original kernel value from ExpSquaredKernel
-    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
-                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+    orig_ker = np.array([[1, np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.), 1]])
 
     assert np.linalg.slogdet(ker_val)[0] == 1  # postive definite
-    assert ker_val[0, 0] == (1 / 4.) * 4. * orig_ker[0][0]
-    assert ker_val[1, 1] == (1 / 4.) * 4. * orig_ker[0][0]
+    # only term Cs are non-zeros
+    assert ker_val[0, 0] == (1 / 4.) * 4. * .25 ** 2. * orig_ker[0][0]
+    assert ker_val[1, 1] == (1 / 4.) * 4. * .25 ** 2. * orig_ker[0][0]
 
-    assert ker_val[1, 0] == ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) * \
-        orig_ker[1][0]
+    assert ker_val[1, 0] == ((3 ** 2 * 5 ** 2 * .25 ** 4.) -  # termA
+                             (3 ** 2 + 5 ** 2) * .25 ** 3. +  # termB
+                             1 * .25 ** 2.                    # termC
+                             ) * orig_ker[1][0]
 
     assert ker_val[0, 1] == ker_val[1, 0]
 
