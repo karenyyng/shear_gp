@@ -144,7 +144,9 @@ class KernelDerivatives(ExpSquaredKernel):
         given the ix for each the derivatives are taken w.r.t.
         i.e. see equation (28) this term is $\Lambda$
 
-        :params ix: list of 4 integers
+        :param ix: list of 4 integers
+        :param m: spatial index of feature x
+        :param n: spatial index of feature y
 
         :returns: components of the $\Gamma$ term in eqn (27) without the signs
         :note: see eqn (2) etc. for the factor of 1 / 4.
@@ -168,7 +170,7 @@ class KernelDerivatives(ExpSquaredKernel):
 
         termA = self.__termA__(ix, m, n)
 
-        print ("beta = {}".format(beta))
+        print ("__Sigma4thDeriv__: beta = {}".format(beta))
         return (beta ** 4. * termA -
                 beta ** 3. * allTermBs +
                 beta ** 2. * allTermCs) / 4.
@@ -230,6 +232,7 @@ class KernelDerivatives(ExpSquaredKernel):
 
         # calling the value method of ExpSquaredKernel
         cov_mat = super(KernelDerivatives, self).value(x1, x2)
+        print ("Original ker matrix value is \n", cov_mat)
 
         # return the Schur product of the matrix
         # print "kern deriv coeff is {0}\n".format(mat)
@@ -297,6 +300,8 @@ class KappaKappaExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
         self.__coords__ = coords
         self.__beta__ = beta
+        if verbose:
+            print ("self.__beta__ = ", self.__beta__)
 
         if isinstance(rMetric, float) or isinstance(rMetric, int):
             self.__metric__ = rMetric * np.ones(ndim)
@@ -406,8 +411,12 @@ class KappaGamma2ExpSquaredKernel(KernelDerivatives, ExpSquaredKernel):
 
     """
 
-    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.):
-        super(ExpSquaredKernel, self).__init__(beta, ndim=ndim,
+    def __init__(self, beta, coords, ndim=2, dim=-1, extra=[], rMetric=1.,
+                 verbose=False):
+        if verbose:
+            print("Initializing ExpSquared within KappaGamma1ExpSquaredKernel")
+            print("flipping parametrization to be {}".format(1. / beta))
+        super(ExpSquaredKernel, self).__init__(1. / beta, ndim=ndim,
                                                dim=-dim, extra=[])
 
         # this should call KernelDerivatives.__init__()
