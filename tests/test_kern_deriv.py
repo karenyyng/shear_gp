@@ -427,10 +427,6 @@ def test_gamma2gamma2_value(kernels_dict):
     assert ker_val[0, 1] == ker_val[1, 0]
 
 
-def test_inv_beta():
-    return
-
-
 # if __name__ == "__main__":
 #     kappakappaCov = test_kappakappa_value(kernels())
 #

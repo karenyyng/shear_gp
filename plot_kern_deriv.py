@@ -27,10 +27,19 @@ def run_KappaKappaExpSquare(coords, beta=1.):
     return
 
 
-def plotDerivCov(kernel, coords, l_sq=1., plot=False, debug=False):
-    # coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
+def plotDerivCov(kernel, coords, beta=1., plot=False, debug=False):
+    """
+    :param kernel: python kernel wrapper object
+        from `ker_deriv.py`
+    :param coords: numpy array of floats
+        shape = (nobs, 2)
+    :param beta: float
 
-    k = kernel(1. / l_sq, coords, ndim=2)
+    :return: np array
+        kernel_matrix
+    """
+
+    k = kernel(beta, coords, ndim=2)
     gpKKExpSq = george.GP(1.0 * k)
 
     if debug:
@@ -50,11 +59,21 @@ def get_Cython_kernels(k, coords, beta=1):
     return gp.get_matrix(coords)
 
 
-def plotExpSqCov(coords, plot1=False, plot2=True, save=False, beta=1.,
+def plotExpSqCov(coords, plot1=False, plot2=True, save=False, l_sq=1.,
                  lambDa=1.):
-    # coords = np.array([[i, 3] for i in np.arange(0, grid_extent, spacing)])
+    """
+    :param kernel: python kernel wrapper object
+        from `ker_deriv.py`
+    :param coords: numpy array of floats
+        shape = (nobs, 2)
+    :param l_sq: float
+        this really is `l_sq` since we did not modify George
 
-    k = george.kernels.ExpSquaredKernel(beta, ndim=2)
+    :return: np array
+        cov matrix
+    """
+
+    k = george.kernels.ExpSquaredKernel(l_sq, ndim=2)
     gpExpSq = george.GP(lambDa * k)
 
     gpExpSq.compute(coords, 1e-5)
@@ -64,7 +83,7 @@ def plotExpSqCov(coords, plot1=False, plot2=True, save=False, beta=1.,
         plotCovMatrix(Cov, kernel_name="ExpSquaredKernel")
 
     if plot2:
-        plotFixedCov(Cov, beta, coords)
+        plotFixedCov(Cov, l_sq, coords)
     return Cov
 
 
