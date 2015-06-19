@@ -48,7 +48,7 @@ def test_normalized_corr():
 
 
 @pytest.fixture(scope="class")
-def kernels_dict(beta=.25):
+def kernels_dict(beta=.5):
     beta, coords = two_coords_test_data(beta)
     print("Setting beta to ", beta)
     ker = {}
