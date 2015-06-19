@@ -96,7 +96,6 @@ def test__X__(kernels, kernels_beta_equals_pt_25):
             assert v.__X__(0, 0, 1) == 0
 
 
-
 def test_term_A(kernels, kernels_beta_equals_pt_25):
     for kernels in [kernels, kernels_beta_equals_pt_25]:
         for k, v in kernels.iteritems():
@@ -261,16 +260,16 @@ def test_Sigma4thDeriv_pt_25(kernels_beta_equals_pt_25):
         # test different indices
         assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) - \
             (.25 ** 4. * 5 ** 2 * 3 ** 2 -    # 1 permutation of term A
-             .25 ** 3. * (5 ** 2. - 3 ** 2.)  # 4 of the 6 termBs are nonzero
-             + .25 ** 2. * 1) / 4. < 1e-10    # 1 of the 3 termCs are nonzero
+             .25 ** 3. * (5 ** 2. + 3 ** 2.)  # 2 of the 6 termBs are nonzero
+             + .25 ** 2. * 1) / 4. == 0.      # 1 of the 3 termCs are nonzero
 
         assert v.__Sigma4thDeriv__([1, 1, 0, 0], 1, 0, [1, 1]) == \
             v.__Sigma4thDeriv__([0, 0, 1, 1], 1, 0, [1, 1])
 
         assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) - \
             (.25 ** 4. * 5. ** 2 * 3. ** 2. -  # 1 permutation of term A
-             .25 ** 3. * (5 ** 2. - 3 ** 2.) + # 4 of the 6 termBs are nonzero
-             .25 ** 2. * 1) / 4. < 1e-10       # 1 of the 3 termCs are nonzero
+             .25 ** 3. * (5 ** 2. + 3 ** 2.) + # 2 of the 6 termBs are nonzero
+             .25 ** 2. * 1) / 4. == 0.         # 1 of the 3 termCs are nonzero
 
         assert v.__Sigma4thDeriv__([1, 0, 1, 0], 1, 0, [1, 1]) == \
             v.__Sigma4thDeriv__([0, 1, 0, 1], 1, 0, [1, 1])
@@ -295,9 +294,9 @@ def test_compute_Sigma4derv_matrix_beta_equals_pt_25(kernels_beta_equals_pt_25):
         assert ker[1, 0] == ker[0, 1]
         assert ker[1, 0] == (5 ** 4 * 0.25 ** 4. -     # term A
                              # 6 permutations of term B
-                             6 * 5 ** 2 * 0.25 ** 3. +
+                             6 * 5. ** 2. * 0.25 ** 3. +
                              # 3 permutations of term C
-                             3 * 1 ** 0.25 ** 2.) / 4.
+                             3 * 1 * 0.25 ** 2.) / 4.
 
         ker = v.__compute_Sigma4derv_matrix__([0, 0, 0, 0], [1, 1])
         assert ker[0, 0] == 3 * 1 / 4. * .25 ** 2.
@@ -310,23 +309,23 @@ def test_compute_Sigma4derv_matrix_beta_equals_pt_25(kernels_beta_equals_pt_25):
         assert ker[0, 0] == 1 / 4. * .25 ** 2.  # term C
         assert ker[1, 1] == 1 / 4. * .25 ** 2.  # term C
         assert ker[1, 0] == ((3 ** 2 * 5 ** 2 * .25 ** 4.) -
-                             (3 ** 2 + 5 ** 2 * .25 ** 3.) +
+                             ((3 ** 2 + 5 ** 2) * .25 ** 3.) +
                              1 * .25 ** 2.) / 4.
 
         ker = v.__compute_Sigma4derv_matrix__([1, 1, 0, 0], [1, 1])
         assert ker[0, 0] == 1 / 4. * .25 ** 2.  # term C
         assert ker[1, 1] == 1 / 4. * .25 ** 2.  # term C
         assert ker[1, 0] == ((3 ** 2 * 5 ** 2 * .25 ** 4.) -
-                             (3 ** 2 + 5 ** 2 * .25 ** 3.) +
+                             ((3 ** 2 + 5 ** 2) * .25 ** 3.) +
                              1 * .25 ** 2.) / 4.
 
         # all other permutations of 1100 will take the following values
         ker = v.__compute_Sigma4derv_matrix__([1, 0, 1, 0], [1, 1])
         assert ker[0, 0] == 1 / 4. * .25 ** 2.
         assert ker[1, 1] == 1 / 4. * .25 ** 2.
-        assert ker[1, 0] == ((3 ** 2 * 5 ** 2) ** 4. -
-                             (3 ** 2 + 5 ** 2) ** 3. +
-                             1 * 2.) / 4.
+        assert ker[1, 0] == ((3 ** 2 * 5 ** 2) * .25 ** 4. -  # termA
+                             (5 ** 2 + 3 ** 2.) * .25 ** 3.+  # termB
+                             1 ** 2. * .25 ** 2.) / 4.
 
         ker = v.__compute_Sigma4derv_matrix__([1, 1, 1, 0], [1, 1])
         assert ker[0, 0] == 0
@@ -357,8 +356,8 @@ def test_kappakappa_value_beta_equals_pt_25(kernels_beta_equals_pt_25):
     ker_val = k.value()
 
     # original kernel value from ExpSquaredKernel
-    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
-                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+    orig_ker = np.array([[1, np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.), 1]])
 
     assert np.linalg.slogdet(ker_val)[0] == 1  # postive definite
     # check eqn. (2) from `ker_deriv.pdf`
@@ -396,23 +395,32 @@ def test_kappagamma1_value_beta_equals_pt_25(kernels_beta_equals_pt_25):
     ker_val = k.value()
 
     # original kernel value from ExpSquaredKernel
-    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
-                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+    orig_ker = np.array([[1, np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.), 1]])
 
     # these ker_val[0, 0] and ker_val[1, 1] shouldn't be zero due to termC
     # of the derivative
 
     # check eqn. (5) from `ker_deriv.pdf`
+    # these two tests give zeros so doesn't matter
     assert ker_val[0, 0] == (3 * 1 / 4. + 1 / 4. - 1 / 4. - 3 * 1 / 4.) * \
         orig_ker[0][0]
     assert ker_val[1, 1] == (3 / 4. + 1 / 4. - 1 / 4. - 3 / 4.) * \
         orig_ker[1][1]
 
-    assert ker_val[1, 0] - ((3 ** 4 - 6 * 3 ** 2 + 3 * 1) / 4. +
-                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. -
-                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. -
-                            (5 ** 4 - 6 * 5 ** 2 + 3 * 1) / 4.) * \
-        orig_ker[1][0] == 0
+    assert ker_val[1, 0] - ((3 ** 4 * .25 ** 4. -              # 1111 term A
+                             6 * 3 ** 2 * .25 ** 3+            # 1111 term B
+                             3 * 1 * .25 ** 2.) +              # 1111 term C
+                            ((3 ** 2 * 5 ** 2 * .25 ** 4.) -   # 1122 term A
+                             (3 ** 2 + 5 ** 2) * .25 ** 3. +   # 1122 term B
+                             1 * .25 ** 2.) -                  # 1122 term C
+                            ((3 ** 2 * 5 ** 2) * .25 ** 4. -   # 2211 term A
+                             (3 ** 2 + 5 ** 2) * .25 ** 3. +   # 2211 term B
+                             1 * .25 ** 2.) -                  # 2211 term C
+                            (5 ** 4 * .25 ** 4. -              # 2222 term A
+                             6 * 5 ** 2 * .25 ** 3. +          # 2222 term B
+                             3 * 1 * .25 ** 2.)                # 2222 term C
+                            ) / 4. * orig_ker[1][0] == 0
 
     assert ker_val[0, 1] == ker_val[1, 0]
 
@@ -422,14 +430,18 @@ def test_kappagamma2_value_beta_equals_pt_25(kernels_beta_equals_pt_25):
     ker_val = k.value()
 
     # original kernel value from ExpSquaredKernel
-    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
-                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+    orig_ker = np.array([[1, np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.), 1]])
 
     assert ker_val[0, 0] == 0
     assert ker_val[1, 1] == 0
-    assert ker_val[1, 0] == (((3 * 5 ** 3) - (5 * 3 * 3)) / 4 * 2 +
-                             ((5 * 3 ** 3) - (5 * 3 * 3)) / 4 * 2) * \
-        orig_ker[1][0]
+
+    # term C is 0
+    assert ker_val[1, 0] == ((3 * 5 ** 3 * .25 ** 4.) -  # 2221, 2212 term A
+                             (5 * 3 * 3) * .25 ** 3. +   # 3 term B 2221,2212
+                             (5 * 3 ** 3) * .25 ** 4. -  # 1112, 1121 term A
+                             (5 * 3 * 3) * .25 ** 3.     # 3 term B 1112,1121
+                             ) * 2. / 4. * orig_ker[1][0]
     assert ker_val[1, 0] == ker_val[0, 1]
 
 
@@ -438,21 +450,33 @@ def test_gamma1gamma1_value_beta_equals_pt_25(kernels_beta_equals_pt_25):
 
     # original kernel value from ExpSquaredKernel
     ker_val = k.value()
-    orig_ker = np.array([[1, np.exp(-(3 ** 2 + 5 ** 2.) / 2.)],
-                         [np.exp(-(3 ** 2 + 5 ** 2.) / 2.), 1]])
+    orig_ker = np.array([[1, np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.)],
+                         [np.exp(-.25 * (3 ** 2 + 5 ** 2.) / 2.), 1]])
 
     assert np.linalg.slogdet(ker_val)[0] == 1  # positive definite
 
-    assert ker_val[0, 0] == (3 * 1 / 4. - 1 / 4. - 1 / 4. + 3 * 1 / 4.) * \
-        orig_ker[0][0]
+    # these are all term Cs since termAs and termBs are zeros
+    assert ker_val[0, 0] == (3 * 1 / 4. -      # 1111
+                             1 / 4. -          # 1122
+                             1 / 4. +          # 2211
+                             3 * 1 / 4.        # 2222
+                             ) * .25 ** 2. * orig_ker[0][0]
     assert ker_val[1, 1] == (3 / 4. - 1 / 4. - 1 / 4. + 3 / 4.) * \
-        orig_ker[1][1]
+        orig_ker[1][1] * .25 ** 2.
 
-    assert ker_val[1, 0] - ((3 ** 4 - 6 * 3 ** 2 + 3 * 1) / 4. -
-                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. -
-                            ((3 ** 2 * 5 ** 2) - (3 ** 2 + 5 ** 2) + 1) / 4. +
-                            (5 ** 4 - 6 * 5 ** 2 + 3 * 1) / 4.) * \
-        orig_ker[1][0] == 0
+    assert ker_val[1, 0] - ((3 ** 4 * .25 ** 4. -
+                             6 * 3 ** 2 * .25 ** 3. +
+                             3 * 1 * .25 ** 2.) -           # 1111
+                            ((3 ** 2 * 5 ** 2 * .25 ** 4.) -
+                             (3 ** 2 + 5 ** 2) * .25 ** 3. +
+                             1 * .25 ** 2.) -               # 1122
+                            ((3 ** 2 * 5 ** 2 * .25 ** 4.) -
+                             (3 ** 2 + 5 ** 2) * .25 ** 3. +
+                             1 * .25 ** 2.) +              # 2211
+                            (5 ** 4 * .25 ** 4. -
+                             6 * 5 ** 2 * .25 ** 3. +
+                             3 * 1 * .25 ** 2.)             # 2222
+                            ) / 4. * orig_ker[1][0] == 0
 
     assert ker_val[0, 1] == ker_val[1, 0]
 

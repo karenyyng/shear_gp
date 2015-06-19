@@ -170,7 +170,7 @@ class KernelDerivatives(ExpSquaredKernel):
 
         termA = self.__termA__(ix, m, n)
 
-        print ("__Sigma4thDeriv__: beta = {}".format(beta))
+        # print ("__Sigma4thDeriv__: beta = {}".format(beta))
         return (beta ** 4. * termA -
                 beta ** 3. * allTermBs +
                 beta ** 2. * allTermCs) / 4.
