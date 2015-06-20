@@ -19,7 +19,8 @@ from kern_deriv import Gamma1Gamma2ExpSquaredKernel as G1G2ker
 from plot_kern_deriv import plotDerivCov, plotExpSqCov
 
 # --------------------- starting to test Cython Kernel values --------
-
+rtol = np.finfo(np.float64).eps
+print ("Numpy machine precision on this machine is ", rtol)
 
 def test_Cython_kappakappa_2_coords_fixed_l_sq():
     l_sq = 1.0
@@ -45,11 +46,13 @@ def test_Cython_kappakappa_2_coords_vary_l_sq():
                  for l_sq in l_sqs]
     cythonCov = [cythonGP.get_matrix(coords) for cythonGP in cythonGPs]
 
-    pythonCov = [plotDerivCov(KKker, coords, 1. / l_sq)
+    # Python implementation used beta instead of l_sq
+    pythonCov = [plotDerivCov(KKker, coords, beta=1. / l_sq)
                  for l_sq in l_sqs]
 
     for i in range(len(l_sqs)):
-        assert np.allclose(cythonCov[i], pythonCov[i])
+        assert np.allclose(cythonCov[i], pythonCov[i], rtol=rtol)
+        assert np.sum(cythonCov[i] - pythonCov[i]) < rtol
 
     return cythonCov
 
@@ -61,18 +64,20 @@ def test_Cython_kappakappa_10_coords_vary_l_sq():
 
     cythonGPs = [george.GP(1.0 * KappaKappaExpSquaredKernel(l_sq *
                                                             np.ones(ndim),
-                                                      ndim=ndim))
+                                                            ndim=ndim))
                  for l_sq in l_sqs]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
     # print("cythonCov:", cythonCov)
 
-    pythonCov = [plotDerivCov(KKker, coords, 1. / l_sq)
+    # Python implementation used beta instead of l_sq
+    pythonCov = [plotDerivCov(KKker, coords, beta=1. / l_sq)
                  for l_sq in l_sqs]
     # print("pythonCov:", pythonCov[0])
 
     for i in range(len(l_sqs)):
-        assert np.allclose(cythonCov[i], pythonCov[i])
+        assert np.allclose(cythonCov[i], pythonCov[i], rtol=rtol)
+        assert np.sum(cythonCov[i] - pythonCov[i]) < rtol * 5e2
 
 
 def test_Cython_kappagamma1_10_coords_vary_l_sq():
@@ -88,59 +93,64 @@ def test_Cython_kappagamma1_10_coords_vary_l_sq():
                  for cythonGP in cythonGPs]
     # print("cythonCov:", cythonCov)
 
-    pythonCov = [plotDerivCov(KG1ker, coords, 1. / l_sq)
+    # Python implementation used beta instead of l_sq
+    pythonCov = [plotDerivCov(KG1ker, coords, beta=1. / l_sq)
                  for l_sq in l_sqs]
     # print("pythonCov:", pythonCov[0])
 
     for i in range(len(l_sqs)):
-        assert np.allclose(cythonCov[i], pythonCov[i])
+        assert np.allclose(cythonCov[i], pythonCov[i], rtol=rtol)
+        assert np.sum(cythonCov[i] - pythonCov[i]) < rtol * 5e2
 
 
 def test_Cython_kappagamma2_10_coords_vary_l_sq():
     l_sqs = np.arange(0.1, 1.0, 0.1)
-    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    coords = np.array([[1, i] for i in np.arange(0.1, 11.1, 1)])
     ndim = 2L
 
     cythonGPs = [george.GP(1.0 * KappaGamma2ExpSquaredKernel(l_sq *
                                                             np.ones(ndim),
-                                                      ndim=ndim))
+                                                            ndim=ndim))
                  for l_sq in l_sqs]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
     # print("cythonCov:", cythonCov)
 
-    pythonCov = [plotDerivCov(KG2ker, coords, 1. / l_sq)
+    pythonCov = [plotDerivCov(KG2ker, coords, beta=1. / l_sq)
                  for l_sq in l_sqs]
     # print("pythonCov:", pythonCov[0])
 
     for i in range(len(l_sqs)):
-        assert np.allclose(cythonCov[i], pythonCov[i])
+        assert np.allclose(cythonCov[i], pythonCov[i], rtol=rtol)
+        assert np.sum(cythonCov[i] - pythonCov[i]) < rtol * 5e2
+
 
 
 def test_Cython_gamma1gamma1_10_coords_vary_l_sq():
     l_sqs = np.arange(0.1, 1.0, 0.1)
-    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    coords = np.array([[1, i] for i in np.arange(0.1, 11.1, 1)])
     ndim = 2L
 
     cythonGPs = [george.GP(1.0 * Gamma1Gamma1ExpSquaredKernel(l_sq *
-                                                            np.ones(ndim),
-                                                      ndim=ndim))
+                                                              np.ones(ndim),
+                                                              ndim=ndim))
                  for l_sq in l_sqs]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
     # print("cythonCov:", cythonCov)
 
-    pythonCov = [plotDerivCov(G1G1ker, coords, 1 / l_sq)
+    pythonCov = [plotDerivCov(G1G1ker, coords, beta=1. / l_sq)
                  for l_sq in l_sqs]
     # print("pythonCov:", pythonCov[0])
 
     for i in range(len(l_sqs)):
-        assert np.allclose(cythonCov[i], pythonCov[i])
+        assert np.allclose(cythonCov[i], pythonCov[i], rtol=rtol)
+        assert np.sum(cythonCov[i] - pythonCov[i]) < rtol * 5e2
 
 
 def test_Cython_gamma1gamma2_10_coords_vary_l_sq():
     l_sqs = np.arange(0.1, 1.0, 0.1)
-    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    coords = np.array([[1, i] for i in np.arange(0.1, 11.1, 1)])
     ndim = 2L
 
     cythonGPs = [george.GP(1.0 * Gamma1Gamma2ExpSquaredKernel(l_sq *
@@ -151,17 +161,19 @@ def test_Cython_gamma1gamma2_10_coords_vary_l_sq():
                  for cythonGP in cythonGPs]
     # print("cythonCov:", cythonCov)
 
-    pythonCov = [plotDerivCov(G1G2ker, coords, 1. / l_sq)
+    pythonCov = [plotDerivCov(G1G2ker, coords, beta=1. / l_sq)
                  for l_sq in l_sqs]
     # print("pythonCov:", pythonCov[0])
 
     for i in range(len(l_sqs)):
-        assert np.allclose(cythonCov[i], pythonCov[i])
+        assert np.array_equal(cythonCov[i], pythonCov[i])
+        assert np.sum(cythonCov[i] - pythonCov[i]) < rtol * 5e2
+
 
 
 def test_Cython_gamma2gamma2_10_coords_vary_l_sq():
     l_sqs = np.arange(0.1, 1.0, 0.1)
-    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    coords = np.array([[1, i] for i in np.arange(0.1, 11.1, 1)])
     ndim = 2L
 
     cythonGPs = [george.GP(1.0 * Gamma2Gamma2ExpSquaredKernel(l_sq *
@@ -172,18 +184,19 @@ def test_Cython_gamma2gamma2_10_coords_vary_l_sq():
                  for cythonGP in cythonGPs]
     # print("cythonCov:", cythonCov)
 
-    pythonCov = [plotDerivCov(G2G2ker, coords, 1 / l_sq)
+    pythonCov = [plotDerivCov(G2G2ker, coords, beta=1 / l_sq)
                  for l_sq in l_sqs]
     # print("pythonCov:", pythonCov[0])
 
     for i in range(len(l_sqs)):
-        assert np.allclose(cythonCov[i], pythonCov[i])
+        assert np.allclose(cythonCov[i], pythonCov[i], rtol=rtol)
+        assert np.sum(cythonCov[i] - pythonCov[i]) < rtol * 5e2
 
 
 def test_Cython_kappakappa_10_coords_fixed_lambda():
     inv_lambda = 2.0
     l_sqs = np.arange(0.1, 1.0, 0.1)
-    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    coords = np.array([[1, i] for i in np.arange(0.1, 11.1, 1)])
     ndim = 2L
 
     cythonGPs = [george.GP(inv_lambda *
@@ -199,13 +212,15 @@ def test_Cython_kappakappa_10_coords_fixed_lambda():
     # print("pythonCov:", pythonCov[0])
 
     for i in range(len(l_sqs)):
-        assert np.allclose(1 / inv_lambda * cythonCov[i], pythonCov[i])
+        assert np.allclose(1 / inv_lambda * cythonCov[i], pythonCov[i],
+                           rtol=rtol)
+        assert np.sum(1 / inv_lambda * cythonCov[i] - pythonCov[i]) < rtol * 5e2
 
 
 def test_Cython_sqExp_10_coords_vary_l_sq():
     ndim = 2L
     l_sqs = np.arange(0.1, 1.0, 0.1)
-    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    coords = np.array([[1, i] for i in np.arange(0.1, 11.1, 1)])
 
     cythonGPs = [george.GP(1.0 * ExpSquaredKernel(l_sq * np.ones(ndim),
                                                   ndim=ndim))
@@ -218,13 +233,14 @@ def test_Cython_sqExp_10_coords_vary_l_sq():
 
     for i in range(len(l_sqs)):
         assert np.array_equal(cythonCov[i], pythonCov[i])
+        assert np.sum(cythonCov[i] - pythonCov[i]) < rtol
 
 
 def test_Cython_sqExp_10_coords_fixed_lambda():
     ndim = 2L
     inv_lambda = 0.5
     l_sqs = np.arange(0.1, 1.0, 0.1)
-    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    coords = np.array([[1, i] for i in np.arange(0.1, 11.1, 1)])
 
     cythonGPs = [george.GP(inv_lambda * ExpSquaredKernel(l_sq * np.ones(ndim),
                                                      ndim=ndim))
@@ -237,6 +253,7 @@ def test_Cython_sqExp_10_coords_fixed_lambda():
 
     for i in range(len(l_sqs)):
         assert np.array_equal(1 / inv_lambda * cythonCov[i], pythonCov[i])
+        assert np.sum(1 / inv_lambda * cythonCov[i] - pythonCov[i]) < rtol
 
 
 if __name__ == "__main__":

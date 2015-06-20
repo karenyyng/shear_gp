@@ -232,7 +232,7 @@ class KernelDerivatives(ExpSquaredKernel):
 
         # calling the value method of ExpSquaredKernel
         cov_mat = super(KernelDerivatives, self).value(x1, x2)
-        print ("Original ker matrix value is \n", cov_mat)
+        # print ("Original ker matrix value is \n", cov_mat)
 
         # return the Schur product of the matrix
         # print "kern deriv coeff is {0}\n".format(mat)
