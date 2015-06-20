@@ -180,6 +180,28 @@ def test_Cython_gamma2gamma2_10_coords_vary_l_sq():
         assert np.allclose(cythonCov[i], pythonCov[i])
 
 
+def test_Cython_kappakappa_10_coords_fixed_lambda():
+    inv_lambda = 2.0
+    l_sqs = np.arange(0.1, 1.0, 0.1)
+    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
+    ndim = 2L
+
+    cythonGPs = [george.GP(inv_lambda *
+                           KappaKappaExpSquaredKernel(l_sq * np.ones(ndim),
+                                                      ndim=ndim))
+                 for l_sq in l_sqs]
+    cythonCov = [cythonGP.get_matrix(coords)
+                 for cythonGP in cythonGPs]
+    # print("cythonCov:", cythonCov)
+
+    pythonCov = [plotDerivCov(KKker, coords, beta=1. / l_sq)
+                 for l_sq in l_sqs]
+    # print("pythonCov:", pythonCov[0])
+
+    for i in range(len(l_sqs)):
+        assert np.allclose(1 / inv_lambda * cythonCov[i], pythonCov[i])
+
+
 def test_Cython_sqExp_10_coords_vary_l_sq():
     ndim = 2L
     l_sqs = np.arange(0.1, 1.0, 0.1)
@@ -215,28 +237,6 @@ def test_Cython_sqExp_10_coords_fixed_lambda():
 
     for i in range(len(l_sqs)):
         assert np.array_equal(1 / inv_lambda * cythonCov[i], pythonCov[i])
-
-
-def test_Cython_kappakappa_10_coords_fixed_lambda():
-    inv_lambda = 2.0
-    l_sqs = np.arange(0.1, 1.0, 0.1)
-    coords = np.array([[1, i] for i in np.arange(0.1, 1.1, 0.1)])
-    ndim = 2L
-
-    cythonGPs = [george.GP(inv_lambda *
-                           KappaKappaExpSquaredKernel(l_sq * np.ones(ndim),
-                                                      ndim=ndim))
-                 for l_sq in l_sqs]
-    cythonCov = [cythonGP.get_matrix(coords)
-                 for cythonGP in cythonGPs]
-    # print("cythonCov:", cythonCov)
-
-    pythonCov = [plotDerivCov(KKker, coords, beta=1. / l_sq)
-                 for l_sq in l_sqs]
-    # print("pythonCov:", pythonCov[0])
-
-    for i in range(len(l_sqs)):
-        assert np.allclose(1 / inv_lambda * cythonCov[i], pythonCov[i])
 
 
 if __name__ == "__main__":
