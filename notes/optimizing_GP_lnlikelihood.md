@@ -79,9 +79,12 @@ When we implement the log likelihood in the MCMC we need
 \end{equation}
 we can ignore the last term as it is a constant w.r.t. change in $a$ and $b$.
 
+# The GP lnlikelihood 
+A test of if the GP likelihood is computed correctly in `George` is available
+in `test_George_kern.py` and a illustrative GP class is written in `GP.py`.
 
-
-
-
-# Optimizing the GP lnlikelihood 
+In particular, the expression of the log likelihood of a GP is:
+\begin{equation}
+  \ln L = -\frac{1}{2}(y^T K^{-1} y + \log(|\det (K)|) + \log(2 \pi))
+\end{equation}
 

@@ -224,7 +224,7 @@ def construct_gp_for_ExpSqlike_kernels(kernels, hp, noise_amp):
     return gp, psi_err
 
 
-def lnlike_gp(ln_param, gp, coord, psi, yerr=0.0):
+def lnlike_gp(ln_param, gp, coord, psi, yerr=0.0, ln_jacobian=0.):
     """ we initialize the lnlike_gp to be the ln likelihood computed by
     george given the data points, this uses original parametrization
 
@@ -257,19 +257,19 @@ def lnlike_gp(ln_param, gp, coord, psi, yerr=0.0):
     gp.compute(coord, yerr=yerr)
 
     # this computes the data dependent fit term of eqn. 2.3
-    return gp.lnlikelihood(psi)
+    return gp.lnlikelihood(psi) + ln_jacobian
 
 
 def ln10_transform_hp_fix_lambda(ln_param):
     """
-    This upplies the hyperparameter values to `lnlike_gp`
+    This supplies the hyperparameter values to `lnlike_gp`
     :param ln_param: list of floats
         [inv_lambda, log10(l_sq), log10(l_sq), log10(noise_amp)]
+        only l_sq and noise_amp is in log10 scale
     :returns: list of floats
         these are the hyperparameters in correct scale for
         being used by `lnlike_gp`
     """
-    # only l_sq and noise_amp
     ln_param = [ln_param[0], pow(10, ln_param[1]), pow(10, ln_param[2]),
                 pow(10, ln_param[3]) ** 2]
     return np.log(ln_param)
@@ -346,6 +346,84 @@ def draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers):
             for i in xrange(nwalkers)]
 
 
+def fit_gp_log10(initial, kernel, data, nwalkers=8, guess_dev_frac=1e-6,
+                 lnprior_vals=[[-10., 10.], [-10., 10]],
+                 burnin_chain_len=int(1e3),
+                 conver_chain_len=int(5e3), a=2.0, threads=1, pool=None):
+    """
+    Parameters
+    ----------
+        initial : list / array
+            of initial guesses of the truth value of the **log** of hp
+        kernel: george.kernels object
+        data : tuple (t, y, yerr),
+            t : numpy array of coord grid,
+            y = flattened (1D) numpy array of data,
+            yerr = flattened (1D) numpy array of data err
+        nwalkers : integer,
+            number of MCMC chains to use
+        guess_dev_frac : float, has to be > 0 and around 1,
+            initial values of each chain is
+            (init_value * (1 + guess_dev_frac * rand_float)) where rand_float
+            is drawn from a unit variance normal
+        a : float, proposal scale parameter, see GW 10 or the emcee paper at
+            http://arxiv.org/abs/1202.3665, increase value to decrease
+            acceptance_fraction and vice versa
+        threads : integer, number of threads to use for parallelization
+        pool : integer, number of pool processes to use for parallelization
+
+    Returns
+    ------
+        sampler : emcee sampler object,
+            these are in LOG space
+        p0 : list of floats
+            parameter values
+    """
+    ndim = len(initial)
+
+    # initialize starting points and make sure that the initial guesses
+    # are within the prior range
+    count = 0
+    p0 = draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers)
+
+    # make sure prior values are reasonable
+    while(np.sum(map(lambda x: lnprior_gp(x, lnprior_vals=lnprior_vals), p0))):
+        p0 = draw_initial_guesses(initial, guess_dev_frac, ndim, nwalkers)
+        count += 1
+        if count > 1e3:
+            raise ValueError("Cannot initialize reasonable chain values " +
+                             "within prior range")
+
+    map(lambda x: print("Initial guesses were {0}".format(np.exp(x))), p0)
+    # needs a check here to make sure that the initial guesses are not
+    # outside the prior range
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob_gp, a=a,
+                                    args=(kernel, data[0], data[1], data[2]),
+                                    kwargs={"lnprior_vals": lnprior_vals},
+                                    threads=threads, pool=pool)
+
+    if burnin_chain_len > 0:
+        print("Running burn-in with length {0:d}".format(burnin_chain_len))
+        p0, lnp, _ = sampler.run_mcmc(p0, burnin_chain_len)
+        sampler_acceptance_check(sampler)
+        sampler.reset()
+
+        print("Running second burn-in with length" +
+              " {0:d}".format(burnin_chain_len))
+        p = p0[np.argmax(lnp)]
+        p0 = [p + guess_dev_frac * np.random.randn(ndim)
+              for i in xrange(nwalkers)]
+        p0, _, _ = sampler.run_mcmc(p0, burnin_chain_len)
+        sampler_acceptance_check(sampler)
+        sampler.reset()
+
+    print("Running production chain with length {0}".format(conver_chain_len))
+    p0, _, _ = sampler.run_mcmc(p0, conver_chain_len)
+    print("the optimized p0 values are \n{0}".format(np.exp(p0)))
+
+    return sampler, p0
+
+
 def fit_gp(initial, kernel, data, nwalkers=8, guess_dev_frac=1e-6,
            lnprior_vals=[[-10., 10.], [-10., 10]], burnin_chain_len=int(1e3),
            conver_chain_len=int(5e3), a=2.0, threads=1, pool=None):
@@ -407,9 +485,11 @@ def fit_gp(initial, kernel, data, nwalkers=8, guess_dev_frac=1e-6,
         sampler_acceptance_check(sampler)
         sampler.reset()
 
-        print("Running second burn-in with length {0:d}".format(burnin_chain_len))
+        print("Running second burn-in with length" +
+              " {0:d}".format(burnin_chain_len))
         p = p0[np.argmax(lnp)]
-        p0 = [p + guess_dev_frac * np.random.randn(ndim) for i in xrange(nwalkers)]
+        p0 = [p + guess_dev_frac * np.random.randn(ndim)
+              for i in xrange(nwalkers)]
         p0, _, _ = sampler.run_mcmc(p0, burnin_chain_len)
         sampler_acceptance_check(sampler)
         sampler.reset()
@@ -489,7 +569,9 @@ def log10Jacobian(l_sq, noise_amp):
     :returns: float
         Jacobian term on the RHS of eqn. (8)
     """
-    return np.log(l_sq + noise_amp) + np.log(np.log(10))
+    lnJ = np.log(l_sq + noise_amp) + np.log(np.log(10.))
+    # print ("ln_J = ", lnJ, " ", l_sq, " ", noise_amp)
+    return lnJ
 
 
 def compute_log10_transformed_ln_likelihood_surface(
@@ -548,7 +630,8 @@ def compute_log10_transformed_ln_likelihood_surface(
     print ("Computing likelihood surface ...")
     lnlikelihood_surface = np.array([[
         lnlike_gp(ln10_transform_hp_fix_lambda((inv_lambda, p0, p0, p1)),
-                  gp, coords, psi)
+                  gp, coords, psi, ln_jacobian=log10Jacobian(pow(10, p0),
+                                                             pow(10, p1)))
         for p0 in p0_grid] for p1 in p1_grid])
 
     return p0_grid, p1_grid, lnlikelihood_surface
