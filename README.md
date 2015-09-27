@@ -25,24 +25,16 @@ $ py.test --pdb -v test_kern_deriv.py
 ```
 to trigger the python debugger `pdb` post mortem.
 
-# Package prerequisites 
+# Python package prerequisites 
 <a id='package_prerequisites'></a>
 See `py_package_dependencies.txt` for prerequisite packages to run this code.
 Here is a
 [post](http://karenyyng.github.io/using-virtualenv-for-safeguarding-research-project-dependencies.html)
 on how to set up a `virtualenv` for this project. 
 
-# Shear_gp file organization 
-
-<a id='shear_gp_file_organization'></a>
-* modules with functions for analyzing code are in this directory
-* code for calling the functions are in the subdirectories
-
-## File organization of `George` 
-<a id='George_organization'></a>
-[Link to my fork of
-George](https://github.com/karenyyng/george/blob/master/document/file_organization.md)
-
+# Other dependencies
+* [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
+* [HODLR](https://github.com/dfm/HODLR)
 
 ## Note when setting up `George`
 <a id='setting_up_george'></a>
@@ -56,6 +48,23 @@ Then move into the `george` directory just do:
 ```functions 
 $ python setup.py develop 
 ```
+if you installed `Eigen` using a package manager.
+If not, if you have installed it in a weird location, do:
+```
+$ python setup.py build_ext -I/path/to/eigen3 develop
+```
+
+# Shear_gp file organization 
+
+<a id='shear_gp_file_organization'></a>
+* modules with functions for analyzing code are in this directory
+* code for calling the functions are in the subdirectories
+
+## File organization of `George` 
+<a id='George_organization'></a>
+[Link to my fork of
+George](https://github.com/karenyyng/george/blob/master/document/file_organization.md)
+
 
 # Note about `ipynb` magic
 <a id='ipynb_autoreload'></a>
