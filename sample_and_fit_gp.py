@@ -477,6 +477,21 @@ def compute_ln_likelihood_surface(
     return p0_grid, p1_grid, lnlikelihood_surface
 
 
+def log10Jacobian(l_sq, noise_amp):
+    """
+    :param l_sq: float
+    :param noise_amp: float
+    ...math: second and third term from eqn (8) in
+    `optimizing_GP_lnlikelihood.pdf`
+
+    :note: can be made more general by including all the parameters...
+
+    :returns: float
+        Jacobian term on the RHS of eqn. (8)
+    """
+    return np.log(l_sq + noise_amp) + np.log(np.log(10))
+
+
 def compute_log10_transformed_ln_likelihood_surface(
         inv_lambda, l_sq, noise_amp, kernels,
         data_pt_nos_per_side=10, rng=(0, 1.),
@@ -546,6 +561,13 @@ def sampler_acceptance_check(sampler):
                     str(sampler.acceptance_fraction)
         raise ValueError(error_msg)
     return None
+
+
+def MCMC_chain_thinning():
+    """
+    :planned: make sure that the autocorrelation is removed
+    """
+    pass
 
 
 def Rubin_Gelman_Rsq_score():

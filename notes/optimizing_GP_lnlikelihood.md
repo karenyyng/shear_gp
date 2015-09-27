@@ -64,10 +64,10 @@ f_x(\lambda^{-1}, l^2)\left| \det \left(
 &= 
 f_x(\lambda^{-1}, l^2)\left| \det \left( 
 \begin{array}{cc}
-\frac{\partial e^{a \ln B}}{\partial a} & 
-\frac{\partial e^{a \ln B}}{\partial b} \\
-\frac{\partial e^{b \ln B}}{\partial a} & 
-\frac{\partial e^{b \ln B}}{\partial b} 
+\frac{\partial \exp(a \ln B)}{\partial a} & 
+\frac{\partial \exp(a \ln B)}{\partial b} \\
+\frac{\partial \exp(b \ln B)}{\partial a} & 
+\frac{\partial \exp(b \ln B)}{\partial b} 
 \end{array})
 \right)\right| \\
 &= f_x(B^a, B^b)(B^a + B^b)\ln B
