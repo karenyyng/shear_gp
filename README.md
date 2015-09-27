@@ -48,7 +48,11 @@ George](https://github.com/karenyyng/george/blob/master/document/file_organizati
 <a id='setting_up_george'></a>
 Don't compile `HODLR`, clone it and rename folder into `hodlr`
 in the github designated location.
-Then just do:
+```
+$ git clone https://github.com/dfm/HODLR.git $GEORGE_FOLDER/hodlr
+```
+
+Then move into the `george` directory just do:
 ```functions 
 $ python setup.py develop 
 ```
