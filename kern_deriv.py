@@ -58,14 +58,16 @@ class KernelDerivatives(ExpSquaredKernel):
         # the constructor also needs the coordinates
         Compute term 1 in equation (27) without leading factors of $\beta^4$
 
-        :params coords: numpy array,
-            shape is (obs_no, 2) where 2 denotes the 2 spatial dimensions
+        :param ix: list of 4 integers,
+            denote the spatial subscripts for the ker deriv,
+            assumes to take the form [a, b, c, d]
 
-        :params ix: list of 4 integers,
-            denote the spatial subscripts for the ker deriv
+        :param m: integer
+            denote the row index of covariance matrix, or obs_no
 
-        :beta: float,
-            inverse length
+        :params n: integer
+            denote the col index of covariance matrix, or obs_no
+
 
         .. math:
             X_i X_j X_h X_k
@@ -80,9 +82,6 @@ class KernelDerivatives(ExpSquaredKernel):
     def __termB__(self, ix, m, n, metric):
         """
         Compute term 2 in equation (27) without leading factors of $\beta^3$
-
-        :param coords: numpy array,
-            shape is (obs_no, 2) where 2 denotes the 2 spatial dimensions
 
         :param ix: list of 4 integers,
             denote the spatial subscripts for the ker deriv,

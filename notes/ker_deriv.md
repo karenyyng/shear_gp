@@ -545,6 +545,28 @@ N(\mu_s, \Sigma_s) = N(\mu_{\kappa\kappa}, \Sigma_{\kappa\kappa}|
 \Sigma_{\kappa \gamma_1} 
 \end{equation}
 
+## implementation details 
+
+### hard coded member variables that should have at most ONE member copy 
+* `__ix_list__` = actual subscripts on the R.H.S. of eqn. (2 - 7), 4 $\times$ 4
+    in dimension
+* `__term_signs__` = signs of the terms on the R.H.S. of (2 - 7), 4 $\times$ 1
+    in dimension 
+* `__comb_B_ix__` = actual permutation of `__ix_list__`  after taking the order
+    represented by `__pair__of_B_indices__` into account, 6 $\times$ 4 in dimension
+* `__comb_C_ix__` = actual permutation of `__ix_list__`  after taking the order
+    represented by `__pair__of_C_indices__` into account, 3 $\times$ 4 in
+    dimension 
+
+####  within the virtual class `DerivativeExpSquaredKernel`
+The following should only have one copy (per instance)   
+
+* hyperparameter $\beta$
+* hyperparameter $\lambda$
+* `__pairs_of_B_indices__` = order of permutations of subscripts order of second term in eqn. (28), 6 $\times$ 4 in dimension 
+* `__pairs_of_C_indices__` = order of permutations of subscripts order of third term in eqn. (28)  
+3 $\times$ 4 in dimension
+
 ## notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
  indices, e.g. 1122, nor 2211 nor 1111 etc., so
@@ -558,3 +580,4 @@ about including $\delta$ since I don't want myself to forget about it)
 ## Test 1: 
 Let's check that our general expression of the 4th derivative of $\Sigma$
 is correct by working out an example 
+
