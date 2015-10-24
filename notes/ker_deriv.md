@@ -552,26 +552,28 @@ N(\mu_s, \Sigma_s) = N(\mu_{\kappa\kappa}, \Sigma_{\kappa\kappa}|
     in dimension
 * `__term_signs__` = signs of the terms on the R.H.S. of (2 - 7), 4 $\times$ 1
     in dimension 
-* `__comb_B_ix__` = actual permutation of `__ix_list__`  after taking the order
-    represented by `__pair__of_B_indices__` into account, 6 $\times$ 4 in dimension
-* `__comb_C_ix__` = actual permutation of `__ix_list__`  after taking the order
-    represented by `__pair__of_C_indices__` into account, 3 $\times$ 4 in
-    dimension 
+* 4 variations of `__comb_B_ix__` = actual permutation of each of the 4 rows of `__ix_list__`  after taking the order
+    represented by `__pair__of_B_indices__` into account, 6 $\times$ 4 in dimension (we have 6 terms of type B, each term has 4 subscripts)
+* 4 variations of `__comb_C_ix__` = actual permutation of each of the 4 rows of `__ix_list__`  after taking the order represented by `__pair__of_C_indices__` into account, 3 $\times$ 4 in
+    dimension (we have 3 terms of type C, each term has 4 subscripts) 
 
 ####  within the virtual class `DerivativeExpSquaredKernel`
 The following should only have one copy (per instance)   
 
 * hyperparameter $\beta$
 * hyperparameter $\lambda$
-* `__pairs_of_B_indices__` = order of permutations of subscripts order of second term in eqn. (28), 6 $\times$ 4 in dimension 
-* `__pairs_of_C_indices__` = order of permutations of subscripts order of third term in eqn. (28)  
-3 $\times$ 4 in dimension
+* `__pairs_of_B_indices__` = order of permutations of subscripts order of the second term on the RHS of eqn. (28), 6 $\times$ 4 in dimension 
+* `__pairs_of_C_indices__` = order of permutations of subscripts order of the third term on the RHS of eqn. (28)  3 $\times$ 4 in dimension
 
 ## notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
  indices, e.g. 1122, nor 2211 nor 1111 etc., so
  for small angular separation, only $\kappa$ and $\gamma_1$ has increased
-covariances on the diagonal compared to $\psi_s$  ## Thoughts on implementation 
+covariances on the diagonal compared to $\psi_s$  
+
+
+
+## Thoughts on implementation 
 * The metric object should incorporate the $\delta_{ij}$ condition for
  diagonal D, which will kill a lot of terms (sorry for being pedantic
 about including $\delta$ since I don't want myself to forget about it)

@@ -9,6 +9,8 @@ from george.kernels import (KappaKappaExpSquaredKernel,
 import george
 import numpy as np
 import sys
+import json
+
 sys.path.append("../")
 from kern_deriv import KappaKappaExpSquaredKernel as KKker
 from kern_deriv import KappaGamma1ExpSquaredKernel as KG1ker
@@ -22,17 +24,48 @@ from plot_kern_deriv import plotDerivCov, plotExpSqCov
 rtol = np.finfo(np.float64).eps
 print ("Numpy machine precision on this machine is ", rtol)
 
-def test_Cython_kappakappa_2_coords_fixed_l_sq():
+
+def prepare_dict_for_test_case(jdict, kernel_name, cythonCov, pythonCov, l_sq,
+                               inv_lambda, coords):
+    temp_dict = {}
+    temp_dict["l_sq"] = l_sq
+    temp_dict["inv_lambda"] = inv_lambda
+    temp_dict["coords"] = coords.tolist()
+    temp_dict["cythonCov"] = cythonCov.tolist()
+    temp_dict["pythonCov"] = pythonCov.tolist()
+    assert kernel_name not in jdict, \
+        "kernel name {} already defined in jdict.".format(kernel_name)
+    jdict[kernel_name] = temp_dict
+    return
+
+
+def write_test_fixtures(save):
+    f = open("test_case.json", "w")
+    jdict = {}
+    test_Cython_kappakappa_2_coords_fixed_l_sq(save, jdict)
+    json.dump(jdict, f)
+    f.close()
+
+
+def test_Cython_kappakappa_2_coords_fixed_l_sq(save=False, jdict=None):
     l_sq = 1.0
+    inv_lambda = 1.0
     ndim = 2L
     coords = np.array([[1., 2.], [4., 7.]])
-    cythonGP = george.GP(1.0 * KappaKappaExpSquaredKernel(l_sq * np.ones(ndim),
-                                                          ndim=ndim))
+    cythonGP = \
+        george.GP(inv_lambda *
+                  KappaKappaExpSquaredKernel(l_sq * np.ones(ndim), ndim=ndim))
     cythonCov = cythonGP.get_matrix(coords)
     pythonCov = plotDerivCov(KKker, coords, 1. / l_sq)
 
-    assert np.array_equal(cythonCov, pythonCov)
-    return
+    if not save:
+        assert np.array_equal(cythonCov, pythonCov)
+    else:
+        assert type(jdict) is dict, "jdict is missing for writing to json file"
+        kernel_name = "kappakappa_2"
+        print ("Preparing test results for %s" % kernel_name)
+        return prepare_dict_for_test_case(jdict, kernel_name, cythonCov,
+                                          pythonCov, l_sq, inv_lambda, coords)
 
 
 def test_Cython_kappakappa_2_coords_vary_l_sq():
@@ -85,10 +118,11 @@ def test_Cython_kappagamma1_10_coords_vary_l_sq():
     coords = np.array([[1, i] for i in np.linspace(0.1, 1.0, 10)])
     ndim = 2L
 
-    cythonGPs = [george.GP(1.0 * KappaGamma1ExpSquaredKernel(l_sq *
-                                                            np.ones(ndim),
-                                                            ndim=ndim))
-                 for l_sq in l_sqs]
+    cythonGPs = \
+        [george.GP(1.0 *
+                   KappaGamma1ExpSquaredKernel(l_sq * np.ones(ndim),
+                                               ndim=ndim))
+         for l_sq in l_sqs]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
     # print("cythonCov:", cythonCov)
@@ -123,7 +157,6 @@ def test_Cython_kappagamma2_10_coords_vary_l_sq():
     for i in range(len(l_sqs)):
         assert np.allclose(cythonCov[i], pythonCov[i], rtol=rtol)
         assert np.sum(cythonCov[i] - pythonCov[i]) < rtol * 5e2
-
 
 
 def test_Cython_gamma1gamma1_10_coords_vary_l_sq():
@@ -168,7 +201,6 @@ def test_Cython_gamma1gamma2_10_coords_vary_l_sq():
     for i in range(len(l_sqs)):
         assert np.array_equal(cythonCov[i], pythonCov[i])
         assert np.sum(cythonCov[i] - pythonCov[i]) < rtol * 5e2
-
 
 
 def test_Cython_gamma2gamma2_10_coords_vary_l_sq():
@@ -243,7 +275,7 @@ def test_Cython_sqExp_10_coords_fixed_lambda():
     coords = np.array([[1, i] for i in np.arange(0.1, 11.1, 1)])
 
     cythonGPs = [george.GP(inv_lambda * ExpSquaredKernel(l_sq * np.ones(ndim),
-                                                     ndim=ndim))
+                           ndim=ndim))
                  for l_sq in l_sqs]
     cythonCov = [cythonGP.get_matrix(coords)
                  for cythonGP in cythonGPs]
@@ -257,5 +289,8 @@ def test_Cython_sqExp_10_coords_fixed_lambda():
 
 
 if __name__ == "__main__":
-    cythonCov1 = test_Cython_kappakappa_2_coords_vary_l_sq()
+    save = True
+    write_test_fixtures(save)
+
+    # cythonCov1 = test_Cython_kappakappa_2_coords_vary_l_sq()
     # cythonCov2 = test_Cython_kappakappa_10_coords_vary_l_sq()
