@@ -288,9 +288,42 @@ def test_Cython_sqExp_10_coords_fixed_lambda():
         assert np.sum(1 / inv_lambda * cythonCov[i] - pythonCov[i]) < rtol
 
 
+def test_timing_Cython_kappakappa_n_coords_fixed_lambda(n=1000):
+    inv_lambda = 2.0
+    l_sqs = [0.5]  # np.arange(0.1, 1.0, 0.1)
+    coords = np.array([[1, i] for i in np.linspace(0.1, 11.1,  n)])
+    ndim = 2L
+
+    cythonGPs = [george.GP(inv_lambda *
+                           KappaKappaExpSquaredKernel(l_sq * np.ones(ndim),
+                                                      ndim=ndim))
+                 for l_sq in l_sqs]
+    cythonCov = [cythonGP.get_matrix(coords)
+                 for cythonGP in cythonGPs]
+    # print("cythonCov:", cythonCov)
+
+    #pythonCov = [plotDerivCov(KKker, coords, beta=1. / l_sq)
+    #             for l_sq in l_sqs]
+    # print("pythonCov:", pythonCov[0])
+
+    # for i in range(len(l_sqs)):
+    #     assert np.allclose(1 / inv_lambda * cythonCov[i], pythonCov[i],
+    #                        rtol=rtol)
+    #     assert np.sum(1 / inv_lambda * cythonCov[i] - pythonCov[i]) < rtol * 5e2
+
+
 if __name__ == "__main__":
     save = True
-    write_test_fixtures(save)
 
-    # cythonCov1 = test_Cython_kappakappa_2_coords_vary_l_sq()
+    _ = test_timing_Cython_kappakappa_n_coords_fixed_lambda(2000)
+
+    # write_test_fixtures(save)
+
+    # cythonCov1 = test_Cython_kappakappa_2_coords_fixed_l_sq()
     # cythonCov2 = test_Cython_kappakappa_10_coords_vary_l_sq()
+    # _ = test_Cython_kappakappa_10_coords_vary_l_sq()
+    # _ = test_Cython_kappagamma1_10_coords_vary_l_sq()
+    # _ = test_Cython_kappagamma2_10_coords_vary_l_sq()
+    # _ = test_Cython_gamma1gamma1_10_coords_vary_l_sq()
+    # _ = test_Cython_gamma1gamma2_10_coords_vary_l_sq()
+    # _ = test_Cython_gamma2gamma2_10_coords_vary_l_sq()

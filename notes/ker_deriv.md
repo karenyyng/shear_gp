@@ -551,11 +551,15 @@ N(\mu_s, \Sigma_s) = N(\mu_{\kappa\kappa}, \Sigma_{\kappa\kappa}|
 * `__ix_list__` = actual subscripts on the R.H.S. of eqn. (2 - 7), 4 $\times$ 4
     in dimension
 * `__term_signs__` = signs of the terms on the R.H.S. of (2 - 7), 4 $\times$ 1
-    in dimension 
-* 4 variations of `__comb_B_ix__` = actual permutation of each of the 4 rows of `__ix_list__`  after taking the order
-    represented by `__pair__of_B_indices__` into account, 6 $\times$ 4 in dimension (we have 6 terms of type B, each term has 4 subscripts)
-* 4 variations of `__comb_C_ix__` = actual permutation of each of the 4 rows of `__ix_list__`  after taking the order represented by `__pair__of_C_indices__` into account, 3 $\times$ 4 in
+    in dimension    
+*`__comb_B_ix__` = actual permutation of each of the 4 rows (variations) of `__ix_list__`  after taking the order
+    represented by `__pair__of_B_indices__` into account, 6 $\times$ 4 in dimension (we have 6 terms of type B, each term has 4 subscripts).
+In conclusion, `__comb_B_ix__` is going to be 6 $\times$ 4 by 4, i.e. 24 by 4. 
+
+
+* `__comb_C_ix__` = actual permutation of each of the 4 rows (variation) of `__ix_list__`  after taking the order represented by `__pair__of_C_indices__` into account, 3 $\times$ 4 in
     dimension (we have 3 terms of type C, each term has 4 subscripts) 
+In conclusion, `__comb_C_ix__` is going to be 3 $\times$ 4 by 4, i.e. 12 by 4. 
 
 ####  within the virtual class `DerivativeExpSquaredKernel`
 The following should only have one copy (per instance)   
