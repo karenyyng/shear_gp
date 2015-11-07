@@ -54,6 +54,8 @@ If not, if you have installed it in a weird location, do:
 $ python setup.py build_ext -I/path/to/eigen3 develop
 ```
 
+
+
 # Shear_gp file organization 
 
 <a id='shear_gp_file_organization'></a>
@@ -79,3 +81,5 @@ first, before you can use
     %autoreload
 
 in the notebook.
+
+

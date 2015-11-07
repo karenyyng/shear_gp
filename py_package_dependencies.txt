@@ -39,3 +39,5 @@ tables==3.1.1
 tornado==4.0.2
 triangle-plot==0.0.6
 wsgiref==0.1.2
+sqlalchemy==1.0.9
+mysql-connector-python-rf=2.0.4
