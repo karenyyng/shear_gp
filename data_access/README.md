@@ -8,7 +8,7 @@ Optional dependencies:
 
 ## Installing dependencies using `pip`:
 ```
-> pip install mysql-connector-python-rf
+$ pip install mysql-connector-python-rf
 ```
 
 ## How to run:
