@@ -5,6 +5,12 @@
 Optional dependencies:   
 * Python Pandas and PyTables 
 
+
+## Installing dependencies using `pip`:
+```
+> pip install mysql-connector-python-rf
+```
+
 ## How to run:
 ```
 $ python query_DLS.py
