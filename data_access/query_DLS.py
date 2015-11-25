@@ -17,7 +17,7 @@ class Database:
 
     def __construct_schema_for_(self, table):
         if table not in self.tables:
-            raise ValueError("Suppled `table` = {} ".format(table) +
+            raise ValueError("Supplied `table` = {} ".format(table) +
                              "not in list of tables"
                              )
 
@@ -99,18 +99,22 @@ class DLS_server:
         sql_lines = [l.strip() for l in sql_fstream.readlines()
                      if l[0] != '#']
 
-        col_names_in_query = self.__grab_column_name_from_sql_query__(sql_lines)
-        print ("col_names = ", col_names_in_query)
+        self.sql_column_name = \
+            self.__grab_column_name_from_sql_query__(sql_lines)
+        print ("col_names = ", self.sql_column_name)
 
         sql_query = ' '.join(sql_lines).strip()
 
         if verbose:
             print ("The read-in sql query is:\n", sql_query)
 
-        sql_query = sql_query.replace('\r', '').replace('\n', ' ')
-        return sql_query
+        self.sql_query = sql_query.replace('\r', '').replace('\n', ' ')
+        return
 
-    def get_query_results(self, sql_query):
+    def get_query_results(self, sql_query, verbose=True):
+        if verbose:
+            print ("Querying database with SQL command:")
+            print (sql_query)
         self.cursor.execute(sql_query)
         return [list(i) for i in self.cursor]
 
@@ -121,12 +125,13 @@ def save_results_to_pandas_DataFrame(results, column_headers):
 
 if __name__ == "__main__":
     try:
-        import h5py
-        h5py_exist = True
+        import pandas as pd
+        import tables as pytables
+        pandas_exists = True
 
     except ImportError:
-        print ("No h5py was found, outputting CSV instead.")
-        h5py_exist = False
+        print ("No pandas nor tables (PyTables) was imported successfully. " +
+               "Outputting CSV instead.")
 
     try:
         password_file = "RC1Stage_password.txt"
@@ -151,15 +156,16 @@ if __name__ == "__main__":
         print ("Pandas ")
 
     dls_db = DLS_server(user=user, password=password)
-
-    dls_db.print_db_tables(database=database)
+    # dls_db.print_db_tables(database=database)
 
     # Read SQL query from file.
-    sql_file = "DBard_shear_peak.sql"
-    sql_query = dls_db.process_sql_file(sql_file)
     # sql_file = "test.sql"
+    sql_file = "DBard_shear_peak.sql"
+    dls_db.process_sql_file(sql_file)
 
-    query_results = dls_db.get_query_results(sql_query)
-    # print ("Printing queried results:\n")
-    # for (alpha, delta) in dls_db.cursor:
-    #     print ("{0}, {1}".format(alpha, delta))
+    query_results = dls_db.get_query_results(dls_db.sql_query)
+
+    output_file = "F5_gold_sample"
+    if pandas_exists:
+        df = pd.DataFrame(query_results, columns=dls_db.sql_column_name)
+        df.to_hdf(output_file + ".h5", "df")
