@@ -9,7 +9,6 @@ For details of the Deep Lens Survey databases, read
 http://matilda.physics.ucdavis.edu/working/website/catalogaccess.html
 
 Many thanks to Debbie Bard for an example SQL script.
-You need to ask for a password for using the SQL script.
 """
 from __future__ import (print_function)
 import mysql.connector
@@ -166,8 +165,15 @@ if __name__ == "__main__":
     output_file_prefix = "F5_gold_sample"
     if pandas_exists:
         df = pd.DataFrame(query_results, columns=dls_db.sql_column_name)
-        df.to_hdf(output_file_prefix + ".h5", "df", complevel=9,
-                  complib='zlib')
+        complevel = 9
+        complib = 'zlib'
+        pandas_df_key = 'df'
+        df.to_hdf(output_file_prefix + ".h5", pandas_df_key,
+                  complevel=complevel,
+                  complib=complib)
+        # To read the file, use
+        # > df = pd.read_hdf(output_file_prefix + ".h5", "df")
+
     else:
         import numpy as np
         results = np.array(query_results)
