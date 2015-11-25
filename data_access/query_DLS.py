@@ -67,8 +67,9 @@ class DLS_server:
             [n for n, q in enumerate(sql_query) if 'FROM' in q][0]
 
         col_names = sql_query[col_name_lines[0] + 1: col_name_lines[1]]
-        return [c.replace(',', '') for c in col_names]
-
+        col_names = [c.replace(',', '').split('.')[1]
+                     for c in col_names]
+        return col_names
 
     def print_db_tables(self, database=None, verbose=False):
         if database is None:
@@ -128,12 +129,18 @@ class DLS_server:
 if __name__ == "__main__":
     try:
         import pandas as pd
-        import tables as pytables
         pandas_exists = True
-
     except ImportError:
-        print ("No pandas nor tables (PyTables) was imported successfully. " +
+        print ("No pandas was imported successfully. " +
                "Outputting CSV with NumPy instead.")
+        pandas_exists = False
+
+    try:
+        import tables as pytables
+    except ImportError:
+        print ("No tables (PyTables) was imported successfully. " +
+               "Outputting CSV with NumPy instead.")
+        pandas_exists = False
 
     try:
         password_file = "RC1Stage_password.txt"
@@ -157,15 +164,16 @@ if __name__ == "__main__":
 
     # Read SQL query from file.
     # sql_file = "test.sql"
+    verbose = False
     sql_file = "DBard_shear_peak.sql"
-    dls_db.process_sql_file(sql_file, verbose=False)
+    dls_db.process_sql_file(sql_file, verbose=verbose)
 
     query_results = dls_db.get_query_results(dls_db.sql_query)
 
     output_file_prefix = "F5_gold_sample"
     if pandas_exists:
         df = pd.DataFrame(query_results, columns=dls_db.sql_column_name)
-        complevel = 9
+        complevel = 9  # Use as much compression as possible
         complib = 'zlib'
         pandas_df_key = 'df'
         df.to_hdf(output_file_prefix + ".h5", pandas_df_key,
@@ -178,5 +186,9 @@ if __name__ == "__main__":
         import numpy as np
         results = np.array(query_results)
         header = ','.join(dls_db.sql_column_name)
-        np.savetxt(output_file_prefix + ".csv", results, fmt="%3.10f", delimiter=",",
+        np.savetxt(output_file_prefix + ".csv", results,
+                   fmt="%3.10f",
+                   delimiter=",",
                    header=header)
+
+
