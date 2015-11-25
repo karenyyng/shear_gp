@@ -38,5 +38,4 @@ AND z.z_b>0.3
 AND s.de<0.25 
 # F5 bound cut F5 is a 2x2 sq. degree field centered at RA=13:59:20, DEC=-11:03:00
 AND p.alpha between 208.7 and 210.85
-AND p.delta between -12.1 and -10.1
-limit 2000;
+AND p.delta between -12.1 and -10.1;

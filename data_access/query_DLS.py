@@ -1,10 +1,15 @@
 """Helper functions for querying the DLS_server database.
+The `DLS_server` class of this script can
+* send SQL queries with a certain username and password
+* query tables
+* query the schema of each table
+* save the results into either a CSV or a compressed HDF5 table file using Pandas
 
 For details of the Deep Lens Survey databases, read
 http://matilda.physics.ucdavis.edu/working/website/catalogaccess.html
 
 Many thanks to Debbie Bard for an example SQL script.
-
+You need to ask for a password for using the SQL script.
 """
 from __future__ import (print_function)
 import mysql.connector
@@ -62,7 +67,9 @@ class DLS_server:
             [n for n, q in enumerate(sql_query) if 'SELECT' in q][0], \
             [n for n, q in enumerate(sql_query) if 'FROM' in q][0]
 
-        return sql_query[col_name_lines[0] + 1: col_name_lines[1]]
+        col_names = sql_query[col_name_lines[0] + 1: col_name_lines[1]]
+        return [c.replace(',', '') for c in col_names]
+
 
     def print_db_tables(self, database=None, verbose=False):
         if database is None:
@@ -101,11 +108,11 @@ class DLS_server:
 
         self.sql_column_name = \
             self.__grab_column_name_from_sql_query__(sql_lines)
-        print ("col_names = ", self.sql_column_name)
 
         sql_query = ' '.join(sql_lines).strip()
 
         if verbose:
+            print ("Extracted col names is ", self.sql_column_name)
             print ("The read-in sql query is:\n", sql_query)
 
         self.sql_query = sql_query.replace('\r', '').replace('\n', ' ')
@@ -119,10 +126,6 @@ class DLS_server:
         return [list(i) for i in self.cursor]
 
 
-def save_results_to_pandas_DataFrame(results, column_headers):
-    return
-
-
 if __name__ == "__main__":
     try:
         import pandas as pd
@@ -131,7 +134,7 @@ if __name__ == "__main__":
 
     except ImportError:
         print ("No pandas nor tables (PyTables) was imported successfully. " +
-               "Outputting CSV instead.")
+               "Outputting CSV with NumPy instead.")
 
     try:
         password_file = "RC1Stage_password.txt"
@@ -150,22 +153,24 @@ if __name__ == "__main__":
         password = ""
         database = "RC1c_public"
 
-    try:
-        import pandas as pd
-    except ImportError:
-        print ("Pandas ")
-
     dls_db = DLS_server(user=user, password=password)
     # dls_db.print_db_tables(database=database)
 
     # Read SQL query from file.
     # sql_file = "test.sql"
     sql_file = "DBard_shear_peak.sql"
-    dls_db.process_sql_file(sql_file)
+    dls_db.process_sql_file(sql_file, verbose=False)
 
     query_results = dls_db.get_query_results(dls_db.sql_query)
 
-    output_file = "F5_gold_sample"
+    output_file_prefix = "F5_gold_sample"
     if pandas_exists:
         df = pd.DataFrame(query_results, columns=dls_db.sql_column_name)
-        df.to_hdf(output_file + ".h5", "df")
+        df.to_hdf(output_file_prefix + ".h5", "df", complevel=9,
+                  complib='zlib')
+    else:
+        import numpy as np
+        results = np.array(query_results)
+        header = ','.join(dls_db.sql_column_name)
+        np.savetxt(output_file_prefix + ".csv", results, fmt="%3.10f", delimiter=",",
+                   header=header)
