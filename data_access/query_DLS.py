@@ -126,6 +126,8 @@ class DLS_server:
 
 
 if __name__ == "__main__":
+    read_sql_file = True
+
     try:
         import pandas as pd
         import tables as pytables
@@ -155,28 +157,29 @@ if __name__ == "__main__":
     dls_db = DLS_server(user=user, password=password)
     # dls_db.print_db_tables(database=database)
 
-    # Read SQL query from file.
-    # sql_file = "test.sql"
-    sql_file = "DBard_shear_peak.sql"
-    dls_db.process_sql_file(sql_file, verbose=False)
+    if read_sql_file:
+        # Read SQL query from file.
+        # sql_file = "test.sql"
+        sql_file = "DBard_shear_peak.sql"
+        dls_db.process_sql_file(sql_file, verbose=False)
 
-    query_results = dls_db.get_query_results(dls_db.sql_query)
+        query_results = dls_db.get_query_results(dls_db.sql_query)
 
-    output_file_prefix = "F5_gold_sample"
-    if pandas_exists:
-        df = pd.DataFrame(query_results, columns=dls_db.sql_column_name)
-        complevel = 9
-        complib = 'zlib'
-        pandas_df_key = 'df'
-        df.to_hdf(output_file_prefix + ".h5", pandas_df_key,
-                  complevel=complevel,
-                  complib=complib)
-        # To read the file, use
-        # > df = pd.read_hdf(output_file_prefix + ".h5", "df")
+        output_file_prefix = "F5_gold_sample"
+        if pandas_exists:
+            df = pd.DataFrame(query_results, columns=dls_db.sql_column_name)
+            complevel = 9
+            complib = 'zlib'
+            pandas_df_key = 'df'
+            df.to_hdf(output_file_prefix + ".h5", pandas_df_key,
+                      complevel=complevel,
+                      complib=complib)
+            # To read the file, use
+            # > df = pd.read_hdf(output_file_prefix + ".h5", "df")
 
-    else:
-        import numpy as np
-        results = np.array(query_results)
-        header = ','.join(dls_db.sql_column_name)
-        np.savetxt(output_file_prefix + ".csv", results, fmt="%3.10f", delimiter=",",
-                   header=header)
+        else:
+            import numpy as np
+            results = np.array(query_results)
+            header = ','.join(dls_db.sql_column_name)
+            np.savetxt(output_file_prefix + ".csv", results, fmt="%3.10f",
+                       delimiter=",", header=header)
