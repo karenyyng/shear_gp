@@ -167,7 +167,10 @@ if __name__ == "__main__":
 
         output_file_prefix = "F5_gold_sample"
         if pandas_exists:
-            df = pd.DataFrame(query_results, columns=dls_db.sql_column_name)
+            df = pd.DataFrame(query_results,
+                              columns=dls_db.sql_column_name
+                              .split('.')[1]  # comment out this line
+                              )
             complevel = 9
             complib = 'zlib'
             pandas_df_key = 'df'
