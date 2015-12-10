@@ -32,7 +32,7 @@ Printing tables from the database named  RC1c_public
 (6, u'SpecZ')
 (7, u'StarDb')
 ```
-For example, if you like to check the all the columns (schema) in p(z) 
+For example, if you like to check the all the columns (schema) that represents p(z) in `table=Prob`
 ```
 > dls_db.print_table_schema('Probs')
 Querying database with SQL command:
