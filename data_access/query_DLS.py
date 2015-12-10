@@ -136,6 +136,7 @@ if __name__ == "__main__":
     except ImportError:
         print ("No pandas nor tables (PyTables) was imported successfully. " +
                "Outputting CSV with NumPy instead.")
+        pandas_exists = False
 
     try:
         password_file = "RC1Stage_password.txt"
