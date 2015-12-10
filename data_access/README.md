@@ -32,8 +32,8 @@ Printing tables from the database named  RC1c_public
 (6, u'SpecZ')
 (7, u'StarDb')
 ```
-# For example, if you are Michael Schneider and you 
-# like to query all the p(z) 
+For example, if you like to check the all the columns (schema) in p(z) 
+```
 > dls_db.print_table_schema('Probs')
 Querying database with SQL command:
 DESCRIBE Probs

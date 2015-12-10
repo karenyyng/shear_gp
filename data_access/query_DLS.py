@@ -1,9 +1,12 @@
+#!/usr/bin/env python
 """Helper functions for querying the DLS_server database.
 The `DLS_server` class of this script can
 * send SQL queries with a certain username and password
 * query tables
 * query the schema of each table
 * save the results into either a CSV or a compressed HDF5 table file using Pandas
+* if you do decide to use wild card selection of a table, you need to put the
+wild card as the LAST entry in the select
 
 For details of the Deep Lens Survey databases, read
 http://matilda.physics.ucdavis.edu/working/website/catalogaccess.html
@@ -12,19 +15,26 @@ Many thanks to Debbie Bard for an example SQL script.
 """
 from __future__ import (print_function)
 import mysql.connector
+import sys
 
 
 class Database:
-    def __init__(self, name, tables):
+    def __init__(self, name, dls_instance, tables=None):
         self.name = name
-        self.tables = {t: {} for t in tables}
+        if tables is None:
+            dls_instance.cursor.execute("USE %s" % name)
+            dls_instance.cursor.execute("SHOW TABLES")
+            tables = [t[0] for t in dls_instance.cursor.fetchall()]
 
-    def __construct_schema_for_(self, table):
-        if table not in self.tables:
+        self.tables = {t: None for t in tables}
+
+    def __construct_schema_for__(self, table, dls_instance):
+        if table not in self.tables.keys():
             raise ValueError("Supplied `table` = {} ".format(table) +
                              "not in list of tables"
                              )
-
+        self.tables[table] = \
+            dls_instance.get_query_results("DESCRIBE {}".format(table))
 
 class DLS_server:
     def __init__(self, database_name="RC1c_public", password="", user="guest"):
@@ -32,19 +42,16 @@ class DLS_server:
 
         self.user = user
         self.password = password
-        self.database = database_name
         self.connector = None
         self.cursor = None
-        self.tables = {}
-
         self.config = {
             "user": self.user,
             "password": self.password,
             "host": "matilda.physics.ucdavis.edu",
-            "database": self.database
+            "database": database_name
         }
-
         self.__connect_to_database__()
+        self.database = Database(database_name, self)
 
     def __del__(self):
         self.cursor.close()
@@ -76,13 +83,9 @@ class DLS_server:
             if verbose:
                 print ("Using database = ", database)
 
-        self.cursor.execute("USE %s" % database)
-        self.cursor.execute("SHOW TABLES")
-        tables = [t[0] for t in self.cursor.fetchall()]
-
         print ("Printing tables from the database named ", database)
+        tables = self.database.tables.keys()
         map(print, zip(range(len(tables)), tables))
-        self.db = Database(database, tables)
         print ("")
 
         return
@@ -92,8 +95,10 @@ class DLS_server:
 
         :param table: string, name of the table to check
         """
-        table_schema = self.get_query_results("DESCRIBE {}".format(table))
-        map(print, table_schema)
+        if self.database.tables[table] is None:
+            self.database.__construct_schema_for__(table, self)
+        map(print, self.database.tables[table])
+
         return
 
     def process_sql_file(self, sql_file, verbose=True):
@@ -124,9 +129,24 @@ class DLS_server:
         self.cursor.execute(sql_query)
         return [list(i) for i in self.cursor]
 
+    def fix_wild_card_col_names(self, table):
+        if self.database.tables[table] is None:
+            self.database.__construct_schema_for__(table, self)
+        cols = [c[0] for c in self.database.tables[table]]
+        self.sql_column_name = self.sql_column_name[:-1] + cols
+        return
+
 
 if __name__ == "__main__":
-    read_sql_file = True
+    if len(sys.argv) != 2:
+        raise ValueError("Usage: query_DLS.py integer\n"
+                         + "Integer = 0 means don't read SQL query. "
+                         + "Integer > 0 means read SQL query."
+                         )
+    read_sql_file = int(sys.argv[1])
+    fix_wild_card_col_name = True
+    fix_table = 'Probs'
+    sql_file = "get_p_z.sql"
 
     try:
         import pandas as pd
@@ -134,7 +154,7 @@ if __name__ == "__main__":
         pandas_exists = True
 
     except ImportError:
-        print ("No pandas nor tables (PyTables) was imported successfully. " +
+        print ("Either pandas or tables (PyTables) was NOT imported successfully. " +
                "Outputting CSV with NumPy instead.")
         pandas_exists = False
 
@@ -161,20 +181,26 @@ if __name__ == "__main__":
     if read_sql_file:
         # Read SQL query from file.
         # sql_file = "test.sql"
-        sql_file = "DBard_shear_peak.sql"
         dls_db.process_sql_file(sql_file, verbose=False)
 
         query_results = dls_db.get_query_results(dls_db.sql_query)
 
         output_file_prefix = "F5_gold_sample"
+        if fix_wild_card_col_name:
+            dls_db.fix_wild_card_col_names(fix_table)
+            # print ("colnames after fixing = ", dls_db.sql_column_name)
+
         if pandas_exists:
             df = pd.DataFrame(query_results,
                               columns=dls_db.sql_column_name
                               )
+            # convert the subfield string to int
+            if 'subfield' in df.keys():
+                df['subfield'] = df["subfield"].map(lambda l: int(l[1]))
             complevel = 9
             complib = 'zlib'
             pandas_df_key = 'df'
-            print ("Outputting retrieved contents to ", output_file_prefix + ".h5")
+            print ("Outputting content to {}".format(output_file_prefix + ".h5"))
             df.to_hdf(output_file_prefix + ".h5", pandas_df_key,
                       complevel=complevel,
                       complib=complib)
@@ -185,8 +211,6 @@ if __name__ == "__main__":
             import numpy as np
             results = np.array(query_results)
             header = ','.join(dls_db.sql_column_name)
-
-            print ("Outputting retrieved contents to ", output_file_prefix +
-                   ".csv")
+            print ("Outputting content to {}".format(output_file_prefix + ".csv"))
             np.savetxt(output_file_prefix + ".csv", results, fmt="%3.10f",
                        delimiter=",", header=header)
