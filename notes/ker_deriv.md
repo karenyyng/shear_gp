@@ -18,8 +18,8 @@ coordinates of the i-th data point.
 $\vec{x}$ and $\vec{y}$ are the same but we call them different names for
 denoting their location in the covariance matrix ....
 
-For inferring the convergence and shear, we need the 2nd spatial
-derivatives.
+The convergence and shear,  $\kappa, \gamma_1, \gamma_2$ are the 2nd spatial
+derivatives of the lensing potential.
 The subscripts in these WL equations correspond to the spatial
 coordinates $x_1, x_2$ NOT the observation numbers 
 i.e. i, j = 1, 2, ..., n observations
@@ -477,21 +477,40 @@ k_{,y_h y_k} r^2_{,x_i x_j}
 ## Collect terms of $\Sigma_{,x_i x_j y_h y_k}$ by plugging them in eqn 20 
 All the relevant terms are boxed above, 
 \begin{align}
-\Sigma_{,x_i x_j y_h y_k} &= (\beta^4 X_h X_j X_k X_i -  
+\nu_{,x_i x_j y_h y_k} &= (\beta^4 X_h X_j X_k X_i -  
 \beta^3 (X_j X_i D_{hk} \delta_{hk} + 5 {\rm perm.}) + \beta^2
-(D_{jh} D_{ik}\delta_{jh}\delta_{ik} + 2 {\rm perm.})) \Sigma\\
-&= \Gamma \Sigma 
+(D_{jh} D_{ik}\delta_{jh}\delta_{ik} + 2 {\rm perm.})) \nu \\
+&= \gamma \nu
 \end{align}
+
+Where $\sigma$ is an entry in the matrix $\Sigma$
+\begin{equation}
+\Sigma  = 
+\left(
+\begin{array}{ccc}
+\nu_{11} & \cdots & \nu_{1n} \\
+\vdots & \ddots & \vdots \\
+\nu_{n1} & \cdots & \nu_{nn} \\
+\end{array}
+\right)
+\end{equation}
 
 Note that when we evaluate the terms in the parenthesis, they come out to be a
 $n \times n$ matrix, and we should multiply those terms to $\Sigma$ using a
-[Schur product](http://en.wikipedia.org/wiki/Hadamard_product_(matrices))
+[Schur product](http://en.wikipedia.org/wiki/Hadamard_product_(matrices)).
 
 Each spatial derivative result in an extra factor of inverse length in
 terms of the units. 
 Therefore, the covariance function of the 4th spatial derivative has units
 of (inverse length)$^4$ ... which seems like there could be factors of some
 constants missing that should cancel out the units.
+
+## Actual Kernel used
+It is customary for people to add a white-noise term to the kernel in the form
+of:
+\begin{equation}
+K = \Sigma + \sigma_{noise}^2 I
+\end{equation}
 
 ## Gradient function for optimizing hyperparameters 
 Gradient function can be thought of  
@@ -545,14 +564,14 @@ N(\mu_s, \Sigma_s) = N(\mu_{\kappa\kappa}, \Sigma_{\kappa\kappa}|
 \Sigma_{\kappa \gamma_1} 
 \end{equation}
 
-## implementation details 
+## Implementation details 
 
-### hard coded member variables that should have at most ONE member copy 
+### Hard coded member variables that should have at most ONE member copy 
 * `__ix_list__` = actual subscripts on the R.H.S. of eqn. (2 - 7), 4 $\times$ 4
     in dimension
 * `__term_signs__` = signs of the terms on the R.H.S. of (2 - 7), 4 $\times$ 1
     in dimension    
-*`__comb_B_ix__` = actual permutation of each of the 4 rows (variations) of `__ix_list__`  after taking the order
+* `__comb_B_ix__` = actual permutation of each of the 4 rows (variations) of `__ix_list__`  after taking the order
     represented by `__pair__of_B_indices__` into account, 6 $\times$ 4 in dimension (we have 6 terms of type B, each term has 4 subscripts).
 In conclusion, `__comb_B_ix__` is going to be 6 $\times$ 4 by 4, i.e. 24 by 4. 
 
@@ -561,7 +580,7 @@ In conclusion, `__comb_B_ix__` is going to be 6 $\times$ 4 by 4, i.e. 24 by 4.
     dimension (we have 3 terms of type C, each term has 4 subscripts) 
 In conclusion, `__comb_C_ix__` is going to be 3 $\times$ 4 by 4, i.e. 12 by 4. 
 
-####  within the virtual class `DerivativeExpSquaredKernel`
+#### Within the virtual class `DerivativeExpSquaredKernel`
 The following should only have one copy (per instance)   
 
 * hyperparameter $\beta$
@@ -569,13 +588,15 @@ The following should only have one copy (per instance)
 * `__pairs_of_B_indices__` = order of permutations of subscripts order of the second term on the RHS of eqn. (28), 6 $\times$ 4 in dimension 
 * `__pairs_of_C_indices__` = order of permutations of subscripts order of the third term on the RHS of eqn. (28)  3 $\times$ 4 in dimension
 
-## notes
+## Notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
  indices, e.g. 1122, nor 2211 nor 1111 etc., so
  for small angular separation, only $\kappa$ and $\gamma_1$ has increased
 covariances on the diagonal compared to $\psi_s$  
 
-
+## Parameters 
+The variable that the ExpSquaredKernel and the DerivativeKernel uses is $l^2 =
+1 / \beta$.
 
 ## Thoughts on implementation 
 * The metric object should incorporate the $\delta_{ij}$ condition for

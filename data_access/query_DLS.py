@@ -169,11 +169,11 @@ if __name__ == "__main__":
         if pandas_exists:
             df = pd.DataFrame(query_results,
                               columns=dls_db.sql_column_name
-                              .split('.')[1]  # comment out this line
                               )
             complevel = 9
             complib = 'zlib'
             pandas_df_key = 'df'
+            print ("Outputting retrieved contents to ", output_file_prefix + ".h5")
             df.to_hdf(output_file_prefix + ".h5", pandas_df_key,
                       complevel=complevel,
                       complib=complib)
@@ -184,5 +184,8 @@ if __name__ == "__main__":
             import numpy as np
             results = np.array(query_results)
             header = ','.join(dls_db.sql_column_name)
+
+            print ("Outputting retrieved contents to ", output_file_prefix +
+                   ".csv")
             np.savetxt(output_file_prefix + ".csv", results, fmt="%3.10f",
                        delimiter=",", header=header)
