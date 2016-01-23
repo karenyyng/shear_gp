@@ -378,7 +378,7 @@ X_i, x_j &= D \delta_{ij} \\
 X_i, y_h &= -D \delta_{ih}  
 \end{align}
 
-### derivatives of the kernel
+### Derivatives of the kernel
 \begin{equation*}
 \Sigma = \lambda^{-1} k 
 \end{equation*}
@@ -391,17 +391,16 @@ k_{,y_h} &= \beta k X_h
 
 \begin{align}
 k_{,x_i x_j} &= \frac{-\beta}{2}(k_{,x_j} r^2_{,x_i} + k r^2_{,x_i x_j})\\
-k_{,x_i x_j y_h} &= \frac{-\beta}{2}(k_,{x_j y_h} r^2_{,x_i} + k_{,x_j}
+k_{,x_i x_j y_h} &= \frac{-\beta}{2}(k_{,x_j y_h} r^2_{,x_i} + k_{,x_j}
 r^2_{,x_i y_h} + k_{,y_h} r^2_{,x_i x_j})\\
 k_{,x_i x_j y_h y_k} &= \frac{-\beta}{2} 
 (k_{,x_j y_h y_k} r^2_{,x_i} +
 k_{,x_j y_h} r^2_{,x_i y_k} + 
 k_{,x_j y_k} r^2_{,x_i y_h} + 
-k_{,y_h y_k r^2_{,x_i x_j}} )
+k_{,y_h y_k} r^2_{,x_i x_j} )
 \end{align}
 
-#### second derivatives 
-## just work on terms that are parts of the 4th kernel derivative 
+## Just work on terms that are parts of the 4th kernel derivative 
 \begin{align*}
 k_{,x_i x_j} &= \frac{\partial}{\partial x_j} (-\beta k X_i)\\
 &= -\beta(k_{,x_j X_i} + k X_{i, x_j})\\ 
@@ -429,7 +428,7 @@ k_{,x_i y_h} &= -(\beta^2 X_h X_i - \beta \delta_{ih} D_{ih})k\\
 k_{,y_h y_k} &= (\beta^2 X_h X_k - \beta \delta_{hk} D_{hk})k 
 \end{align}
 
-## Term 1 of the 4th derivative in eqn (20) 
+## Term 1 of the 4th derivative in eqn (24) 
 \begin{align*}
 k_{,x_j y_h y_k}
 &= \frac{\partial}{\partial y_k} k_{,x_j y_h}\\ 
@@ -483,7 +482,7 @@ All the relevant terms are boxed above,
 &= \gamma \nu
 \end{align}
 
-Where $\sigma$ is an entry in the matrix $\Sigma$
+Where $\nu$ is an entry in the matrix $\Sigma$
 \begin{equation}
 \Sigma  = 
 \left(
@@ -502,8 +501,7 @@ $n \times n$ matrix, and we should multiply those terms to $\Sigma$ using a
 Each spatial derivative result in an extra factor of inverse length in
 terms of the units. 
 Therefore, the covariance function of the 4th spatial derivative has units
-of (inverse length)$^4$ ... which seems like there could be factors of some
-constants missing that should cancel out the units.
+of (inverse length)$^4$.
 
 ## Actual Kernel used
 It is customary for people to add a white-noise term to the kernel in the form
@@ -513,7 +511,8 @@ K = \Sigma + \sigma_{noise}^2 I
 \end{equation}
 
 ## Gradient function for optimizing hyperparameters 
-Gradient function can be thought of  
+With $\Gamma$ being the matrix containing all the derivative coefficients in
+eqn (29), the gradient function can be thought of as
 \begin{align}
 g(r^2) &= \frac{\partial }{\partial r^2}\Sigma_{,hijk}\\
 &= \Gamma \frac{\partial \Sigma}{\partial r^2} + 
@@ -522,13 +521,9 @@ g(r^2) &= \frac{\partial }{\partial r^2}\Sigma_{,hijk}\\
 \end{align} 
 This is due to equation (11) showing how 
 \begin{equation*}
-\frac{\partial X_i}{\partial r^2} = \frac{\partial}{\partial
-r^2}\frac{\partial r^2}{\partial x_i} = 0  
+\frac{\partial X_i}{\partial r^2} = 0. 
 \end{equation*}
-Or
-\begin{equation*}
-\frac{\partial X_i... X_j}{\partial r^2} = 0. 
-\end{equation*}
+
 
 ## Conditional distribution to learn from $\gamma_1$ or $\kappa$
 Our entire covariance matrix with second derivatives give:
@@ -575,18 +570,23 @@ N(\mu_s, \Sigma_s) = N(\mu_{\kappa\kappa}, \Sigma_{\kappa\kappa}|
     represented by `__pair__of_B_indices__` into account, 6 $\times$ 4 in dimension (we have 6 terms of type B, each term has 4 subscripts).
 In conclusion, `__comb_B_ix__` is going to be 6 $\times$ 4 by 4, i.e. 24 by 4. 
 
-
 * `__comb_C_ix__` = actual permutation of each of the 4 rows (variation) of `__ix_list__`  after taking the order represented by `__pair__of_C_indices__` into account, 3 $\times$ 4 in
     dimension (we have 3 terms of type C, each term has 4 subscripts) 
 In conclusion, `__comb_C_ix__` is going to be 3 $\times$ 4 by 4, i.e. 12 by 4. 
 
-#### Within the virtual class `DerivativeExpSquaredKernel`
+#### Miscellaneous 
+* the "distance matrix" $X_1$ and $X_2$ should be precomputed / distributed a priori
+and called when needed.
+
+
+#### Within the virtual class `DerivativeExpSquaredKernel`   
 The following should only have one copy (per instance)   
 
 * hyperparameter $\beta$
 * hyperparameter $\lambda$
 * `__pairs_of_B_indices__` = order of permutations of subscripts order of the second term on the RHS of eqn. (28), 6 $\times$ 4 in dimension 
 * `__pairs_of_C_indices__` = order of permutations of subscripts order of the third term on the RHS of eqn. (28)  3 $\times$ 4 in dimension
+
 
 ## Notes
 * $\gamma_2$, unlike $\kappa$ and $\gamma_1$ does not have any pair of repeated
