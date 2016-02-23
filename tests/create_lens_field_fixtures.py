@@ -16,14 +16,22 @@ from george.kernels import (KappaKappaExpSquaredKernel,
 from collections import OrderedDict
 
 
-def print_matrix_in_eigen_format(mtx):
+def express_matrix_in_eigen_format(mtx, filename="lens_field_fixture.txt",
+                                   write=True, verbose=True):
     """ Eigen matrix can be initialized with
     mtx = ele1, ele2
     :param mtx: 2D numpy array
     :returns: None
     """
+    if write:
+        f = open(filename, "w")
+
     for mtx_row in mtx:
-        print (", ".join(["{:.8g}".format(mtx_ele) for mtx_ele in mtx_row]))
+        line = ", ".join(["{:.8g}".format(mtx_ele) for mtx_ele in mtx_row])
+        print (line)
+        f.write(line + "\n")
+
+    f.close()
 
 
 def output_kernel_value(GPKer, kern_name, x_coords, l_sq, gp_prec, gp_err_prec,
@@ -97,7 +105,7 @@ def print_glue_order():
     print (cov_kernels)
 
 
-def stitch_matrix(CovMtx):
+def stitch_matrix(CovMtx, verbose=True):
     """
     :dictionary:
     :returns: a symmetric matrix that has the following layout,
@@ -118,6 +126,7 @@ def stitch_matrix(CovMtx):
     all_rows = []
     mtx_type = ['grid', 'grid_by_gal']
     for kern_type in kern_type_order():
+        # Upper left submatrix
         left_mtx = np.hstack([CovMtx[k][mtx_type[0]] for k in kern_type])
         right_mtx = np.hstack([CovMtx[k][mtx_type[1]] for k in kern_type])
         glued_mtx = np.hstack([left_mtx, right_mtx])
@@ -125,13 +134,18 @@ def stitch_matrix(CovMtx):
 
     mtx_type = ['grid_by_gal', 'gal']
     for kern_type in kern_type_order():
+        # Lower left submatrix
         left_mtx = np.hstack([CovMtx[k][mtx_type[0]].transpose()
                               for k in kern_type])
+        # Lower right submatrix
         right_mtx = np.hstack([CovMtx[k][mtx_type[1]] for k in kern_type])
         glued_mtx = np.hstack([left_mtx, right_mtx])
         all_rows.append(glued_mtx)
 
     cov_kernels = np.vstack(all_rows)
+
+    if verbose:
+        print_glue_order()
 
     return cov_kernels
 
@@ -194,4 +208,4 @@ if __name__ == "__main__":
 
     cov_kernels = stitch_matrix(CovMtx)
 
-    print_matrix_in_eigen_format(cov_kernels)
+    express_matrix_in_eigen_format(cov_kernels)
