@@ -99,8 +99,9 @@ def test_Cython_kappakappa_10_coords_vary_l_sq():
                                                             np.ones(ndim),
                                                             ndim=ndim))
                  for l_sq in l_sqs]
-    cythonCov = [cythonGP.get_matrix(coords)
-                 for cythonGP in cythonGPs]
+
+    cythonCov = [cythonGP.get_matrix(coords) for cythonGP in cythonGPs]
+
     # print("cythonCov:", cythonCov)
 
     # Python implementation used beta instead of l_sq

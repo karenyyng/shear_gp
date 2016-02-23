@@ -15,7 +15,7 @@ for how the kernels are implemented in george
 from __future__ import division, print_function
 # import george
 from george.kernels import ExpSquaredKernel
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 
 

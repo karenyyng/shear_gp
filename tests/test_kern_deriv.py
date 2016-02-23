@@ -46,24 +46,23 @@ def test_normalized_corr():
 
 # -----set up kernel classes --------------------------------------
 
-
 @pytest.fixture(scope="class")
 def kernels_dict(beta=.5):
     beta, coords = two_coords_test_data(beta)
-    print("Setting beta to ", beta)
+    verbose = False
     ker = {}
     ker["kappakappa"] = KappaKappaExpSquaredKernel(beta, coords, ndim=2,
-                                                   verbose=True)
+                                                   verbose=verbose)
     ker["kappagamma1"] = KappaGamma1ExpSquaredKernel(beta, coords, ndim=2,
-                                                     verbose=True)
+                                                     verbose=verbose)
     ker["kappagamma2"] = KappaGamma2ExpSquaredKernel(beta, coords, ndim=2,
-                                                     verbose=True)
+                                                     verbose=verbose)
     ker["gamma1gamma1"] = \
-        Gamma1Gamma1ExpSquaredKernel(beta, coords, ndim=2, verbose=True)
+        Gamma1Gamma1ExpSquaredKernel(beta, coords, ndim=2, verbose=verbose)
     ker["gamma1gamma2"] = \
-        Gamma1Gamma2ExpSquaredKernel(beta, coords, ndim=2, verbose=True)
+        Gamma1Gamma2ExpSquaredKernel(beta, coords, ndim=2, verbose=verbose)
     ker["gamma2gamma2"] = \
-        Gamma2Gamma2ExpSquaredKernel(beta, coords, ndim=2, verbose=True)
+        Gamma2Gamma2ExpSquaredKernel(beta, coords, ndim=2, verbose=verbose)
     return ker, beta
 
 
@@ -326,6 +325,8 @@ def test_kappagamma1_value(kernels_dict):
 
     assert ker_val[0, 1] == ker_val[1, 0]
 
+    return ker_val
+
 
 def test_kappagamma2_value(kernels_dict):
     kernels, beta = kernels_dict
@@ -347,6 +348,7 @@ def test_kappagamma2_value(kernels_dict):
                              ) * 2. / 4. * orig_ker[1][0]
     assert ker_val[1, 0] == ker_val[0, 1]
 
+    return ker_val
 
 def test_gamma1gamma1_value(kernels_dict):
     kernels, beta = kernels_dict
@@ -384,6 +386,7 @@ def test_gamma1gamma1_value(kernels_dict):
 
     assert ker_val[0, 1] == ker_val[1, 0]
 
+    return ker_val
 
 def test_gamma1gamma2_value(kernels_dict):
     kernels, beta = kernels_dict
@@ -404,6 +407,7 @@ def test_gamma1gamma2_value(kernels_dict):
                              ) / 4 * 2 * orig_ker[1][0]
     assert ker_val[1, 0] == ker_val[0, 1]
 
+    return ker_val
 
 def test_gamma2gamma2_value(kernels_dict):
     kernels, beta = kernels_dict
@@ -426,8 +430,27 @@ def test_gamma2gamma2_value(kernels_dict):
 
     assert ker_val[0, 1] == ker_val[1, 0]
 
+    return ker_val
 
-# if __name__ == "__main__":
+
+if __name__ == "__main__":
+    print_results = True
+    ker_dict = kernels_dict(beta=1.)
+    if print_results:
+        print ("KK")
+        print (test_kappakappa_value(ker_dict))
+        print ("KG1")
+        print (test_kappagamma1_value(ker_dict))
+        print ("KG2")
+        print (test_kappagamma2_value(ker_dict))
+        print ("G1G1")
+        print (test_gamma1gamma1_value(ker_dict))
+        print ("G1G2")
+        print (test_gamma1gamma2_value(ker_dict))
+        print ("G2G2")
+        print (test_gamma2gamma2_value(ker_dict))
+
+
 #     kappakappaCov = test_kappakappa_value(kernels())
 #
 # def test_positive_definiteness():
