@@ -17,7 +17,7 @@ from collections import OrderedDict
 
 
 def express_matrix_in_eigen_format(mtx, filename="lens_field_fixture.txt",
-                                   write=True, verbose=True):
+                                   write=True, verbose=False):
     """ Eigen matrix can be initialized with
     mtx = ele1, ele2
     :param mtx: 2D numpy array
@@ -28,8 +28,9 @@ def express_matrix_in_eigen_format(mtx, filename="lens_field_fixture.txt",
 
     for mtx_row in mtx:
         line = ", ".join(["{:.8g}".format(mtx_ele) for mtx_ele in mtx_row])
-        print (line)
-        f.write(line + "\n")
+        if verbose:
+            print (line)
+        f.write(line + ",\n")
 
     f.close()
 
@@ -46,9 +47,6 @@ def output_kernel_value(GPKer, kern_name, x_coords, l_sq, gp_prec, gp_err_prec,
     # Printing the outputs in a format so that we can copy the outputs
     # to instantiate Eigen3 matrix directly.
     mtx = gp.get_matrix(x_coords)
-
-    if verbose:
-        print_matrix_in_eigen_format(mtx)
 
     return mtx
 
@@ -68,7 +66,7 @@ def cut_mtx_apart(mtx, n_grid, n_gal, ker_name):
     mtxDict = OrderedDict([
         ('grid', mtx[:n_grid, :n_grid]),
         ('gal', mtx[-n_gal:, -n_gal:]),
-        ('grid_by_gal', mtx[:n_grid, :n_gal])
+        ('grid_by_gal', mtx[:n_grid, n_grid:])
     ])
 
     assert np.array_equal(mtxDict['grid'].shape, [n_grid, n_grid])
@@ -87,6 +85,7 @@ def print_glue_order():
     in `stitch_matrix`
     """
     all_rows = []
+    print ("Here is the order for which ")
     mtx_type = ['grid', 'grid_by_gal']
     for kern_type in kern_type_order():
         left_mtx = np.hstack([k + '_' + mtx_type[0] for k in kern_type])
@@ -126,7 +125,7 @@ def stitch_matrix(CovMtx, verbose=True):
     all_rows = []
     mtx_type = ['grid', 'grid_by_gal']
     for kern_type in kern_type_order():
-        # Upper left submatrix
+        # Upper submatrices
         left_mtx = np.hstack([CovMtx[k][mtx_type[0]] for k in kern_type])
         right_mtx = np.hstack([CovMtx[k][mtx_type[1]] for k in kern_type])
         glued_mtx = np.hstack([left_mtx, right_mtx])
@@ -150,7 +149,7 @@ def stitch_matrix(CovMtx, verbose=True):
     return cov_kernels
 
 
-def set_up_fixture(l_sq, gp_err, gp_err_prec):
+def set_up_fixture(l_sq, gp_prec, gp_err_prec):
     """create one possible fixture
     """
     x_grid = np.array([[2.5, 2.5],
@@ -177,20 +176,20 @@ def set_up_fixture(l_sq, gp_err, gp_err_prec):
     return x_coords, n_grid, n_gal, GravLensFieldKernels
 
 
-def main(l_sq, gp_err, gp_err_prec):
+def main(l_sq, gp_prec, gp_err_prec):
     """
     :l_sq: float
-    :gp_err: float
+    :gp_prec: float
     :gp_err_prec: float
     :returns: TODO
     """
     x_coords, n_grid, n_gal, GravLensFieldKernels = \
-        set_up_fixture(l_sq, gp_err, gp_err_prec)
+        set_up_fixture(l_sq, gp_prec, gp_err_prec)
 
     CovMtx = \
         {kern_name: cut_mtx_apart(
             output_kernel_value(
-                ker, kern_name, x_coords, l_sq, gp_err, gp_err_prec),
+                ker, kern_name, x_coords, l_sq, gp_prec, gp_err_prec),
             n_grid, n_gal, kern_name
             )
          for kern_name, ker in GravLensFieldKernels.iteritems()}
@@ -204,8 +203,13 @@ if __name__ == "__main__":
             "Usage: ./test_thresher_sampling.py l_sq gp_prec gp_err_prec")
 
     else:
-        CovMtx = main(*[float(arg) for arg in sys.argv[1:]])
+        hyperparameters = [float(arg) for arg in sys.argv[1:]]
+        CovMtx = main(*hyperparameters)
 
     cov_kernels = stitch_matrix(CovMtx)
 
-    express_matrix_in_eigen_format(cov_kernels)
+    filename = \
+        "lens_field_fixture_corr_var" + \
+        "_{0}_prec_{1}_err_prec_{2}.txt".format(
+            *[arg.replace('.', 'pt') for arg in sys.argv[1:]])
+    express_matrix_in_eigen_format(cov_kernels, filename=filename)
