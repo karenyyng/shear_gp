@@ -41,8 +41,11 @@ def output_kernel_value(GPKer, kern_name, x_coords, l_sq, gp_prec, gp_err_prec,
     @param GPKer : the GP derivative kernel from george
     @param x : numpy array, with shape (n, 2)
     """
-    gp = george.GP(1. / gp_prec * GPKer(l_sq * np.ones(ndim), ndim=ndim) +
-                   (WhiteKernel(1./gp_err_prec, ndim=ndim)))
+    if kern_name == "kk" or kern_name == "g1g1" or kern_name == "g2g2":
+        gp = george.GP(1. / gp_prec * GPKer(l_sq * np.ones(ndim), ndim=ndim) +
+                       (WhiteKernel(1./gp_err_prec, ndim=ndim)))
+    else:
+        gp = george.GP(1. / gp_prec * GPKer(l_sq * np.ones(ndim), ndim=ndim))
 
     # Printing the outputs in a format so that we can copy the outputs
     # to instantiate Eigen3 matrix directly.
