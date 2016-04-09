@@ -598,6 +598,13 @@ covariances on the diagonal compared to $\psi_s$
 The variable that the ExpSquaredKernel and the DerivativeKernel uses is $l^2 =
 1 / \beta$.
 
+## Relationships between different parametrizations
+\begin{align}
+\beta = \frac{1}{l^2} &= - \frac{\ln \rho}{8} \\
+\rho &= \exp(-8/l^2)
+\end{align}
+Therefore when $l^2$ is large, $\rho$ is also larger, i.e. smoother field means more correlated observations over distance, more clumpy field means less correlated entries over the same distance.
+
 ## Thoughts on implementation 
 * The metric object should incorporate the $\delta_{ij}$ condition for
  diagonal D, which will kill a lot of terms (sorry for being pedantic
