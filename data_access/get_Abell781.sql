@@ -7,11 +7,11 @@ p.delta,
 # p.r,
 s.e1,
 s.e2,
-s.de
+s.de,
 # s.a,
 # s.b,
 # p.processflags,
-# z.z_b,
+z.z_b
 # s.flux_radius,
 # d.Dlsqc_prob,
 # There is special code in query_DLS.py to handle column names for this wild card entry
