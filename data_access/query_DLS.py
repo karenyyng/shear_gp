@@ -14,6 +14,7 @@ http://matilda.physics.ucdavis.edu/working/website/catalogaccess.html
 Many thanks to Debbie Bard for an example SQL script.
 """
 from __future__ import (print_function)
+import argparser
 import mysql.connector
 import sys
 
