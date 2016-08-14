@@ -48,7 +48,7 @@ class DLS_server:
         self.config = {
             "user": self.user,
             "password": self.password,
-            "host": "matilda.physics.ucdavis.edu",
+            "host": "emerald.physics.ucdavis.edu",
             "database": database_name
         }
         self.__connect_to_database__()
@@ -145,9 +145,12 @@ if __name__ == "__main__":
                          + "Integer > 0 means read SQL query."
                          )
     read_sql_file = int(sys.argv[1])
-    fix_wild_card_col_name = True
+    fix_wild_card_col_name = False
     fix_table = 'Probs'
     sql_file = "get_p_z.sql"
+    # sql_file = "get_Abell781.sql"
+    # sql_file = "test.sql"
+    # sql_file = "../../dls/gal-shear/data/get_dls_ggl_sample.sql"
 
     try:
         import pandas as pd
@@ -183,13 +186,16 @@ if __name__ == "__main__":
         # Read SQL query from file.
         # sql_file = "test.sql"
         dls_db.process_sql_file(sql_file, verbose=False)
+        print("colnames of initial result = ", dls_db.sql_column_name)
 
         query_results = dls_db.get_query_results(dls_db.sql_query)
 
         output_file_prefix = "F5_gold_sample"
+        # output_file_prefix = "Abell781"
+        # output_file_prefix = "gold_sample_GGL_2016"
         if fix_wild_card_col_name:
             dls_db.fix_wild_card_col_names(fix_table)
-            # print ("colnames after fixing = ", dls_db.sql_column_name)
+            print("colnames after fixing = ", dls_db.sql_column_name)
 
         if pandas_exists:
             df = pd.DataFrame(query_results,
