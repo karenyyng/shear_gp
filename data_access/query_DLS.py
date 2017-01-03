@@ -146,8 +146,8 @@ if __name__ == "__main__":
     read_sql_file = int(sys.argv[1])
     fix_wild_card_col_name = False
     fix_table = 'Probs'
-    sql_file = "get_p_z.sql"
-    # sql_file = "get_Abell781.sql"
+    # sql_file = "get_p_z.sql"
+    sql_file = "get_Abell781.sql"
     # sql_file = "test.sql"
     # sql_file = "../../dls/gal-shear/data/get_dls_ggl_sample.sql"
 
@@ -189,8 +189,8 @@ if __name__ == "__main__":
 
         query_results = dls_db.get_query_results(dls_db.sql_query)
 
-        output_file_prefix = "F5_gold_sample"
-        # output_file_prefix = "Abell781"
+        # output_file_prefix = "F5_gold_sample"
+        output_file_prefix = "Abell781"
         # output_file_prefix = "gold_sample_GGL_2016"
         if fix_wild_card_col_name:
             dls_db.fix_wild_card_col_names(fix_table)
